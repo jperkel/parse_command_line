@@ -14,7 +14,7 @@ suppressPackageStartupMessages({
 })
 
 # set debug to TRUE to see debug messages
-debug <- TRUE
+debug <- FALSE
 
 
 debug_print <- function (s) {
@@ -410,6 +410,15 @@ parse_date <- function(d) {
 
 
 test_parser <- function() {
+  # parser needs to be initialized. Let's see what it returns if not
+  cmdline <- c("delete", "del1", "-o", "myfilename.txt", "-p", "--date=2019-12-31", 
+               "--noshort", "-z", "-k", "key1", "-k", "key2")
+  
+  writeLines ("What if the parser isn't initialized?")
+  mydata <- parse_command_line(cmdline)
+  print (mydata)
+  
+  writeLines ("\nLet's initialize it...")
   ver <- "1.0.0"
   init_command_line_parser('MyRprogram.R','My test program', ver)
   
@@ -436,9 +445,10 @@ test_parser <- function() {
   reg_subcmd("del1", "delete", "delete subcommand 1")
   reg_subcmd("del2", "delete", "delete subcommand 2")
   
-  cmdline <- c("delete", "del1", "-o", "myfilename.txt", "-p", "--date=2019-12-31", 
-               "--noshort", "-z", "-k", "key1", "-k", "key2")
+#  cmdline <- c("delete", "del1", "-o", "myfilename.txt", "-p", "--date=2019-12-31", 
+#               "--noshort", "-z", "-k", "key1", "-k", "key2")
   
+  writeLines ("Running usage()")
   usage()
   
   writeLines ("Command line:")
