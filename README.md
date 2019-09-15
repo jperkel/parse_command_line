@@ -14,4 +14,4 @@ To use:
 
 The parser provides a built-in `usage()` function, which generates a formatted help message. If lparam `--help` and sparam `-?` are not otherwise used, it will automatically interpret those to generate a help message. If lparam `--ver` and sparam `-V` are not used, it will interpret those to output the script version information. 
 
-A `parse_date()` function is provided for handling dates. It supports dates in the format `YYYY-MM-DD`, `YYYYMMDD`, `YYYY-MM`, and `YYYY`. The return value is a tuple of integers: `c(year, month, date)`. For instance, `parse_date("2019-12-31")` returns `c(2019, 12, 31)`. 
+A `parse_date()` function is provided for handling dates. It supports dates in the format `YYYY-MM-DD`, `YYYYMMDD`, `YYYY-MM`, and `YYYY`. The return value is a tuple of integers: `c(year, month, date)`. For instance, `parse_date("2019-12-31")` returns `c(2019, 12, 31)`; `parse_date("2019-12")` returns `c(2019, 12, NA)`.
