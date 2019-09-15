@@ -11,10 +11,13 @@ suppressPackageStartupMessages({
   library(tidyverse)
 })
 
-debug <- TRUE
+debug <- FALSE
 
 debug_print <- function (s) {
-   if (debug == TRUE) print (s)
+   if (debug == TRUE) {
+     if (is.character(s)) writeLines(s)
+     else print (s)
+   }
 }
 
 
@@ -212,14 +215,16 @@ parse_command_line <- function(args) {
   cmds_table <- cmds_table[-1,]
   subcmds_table <- subcmds_table[-1,]
 
-  # debug_print ("Args table")
-  # debug_print (args_table)
-  # debug_print ("Commands table")
-  # debug_print (cmds_table)
-  # debug_print ("Subcommands table")
-  # debug_print (subcmds_table)
-  # debug_print (args)
-  
+  debug_print ("Args table:")
+  debug_print (args_table)
+  debug_print ("\n")
+  debug_print ("Commands table:")
+  debug_print (cmds_table)
+  debug_print ("\n")
+  debug_print ("Subcommands table:")
+  debug_print (subcmds_table)
+  debug_print ("\n")
+
   # if neither reg_arguments() nor reg_command() has been called, there's no table to process; 
   # return the args as a list under the name 'unknowns'
   if (nrow(args_table) == 0 && nrow(cmds_table) == 0) {
@@ -400,11 +405,11 @@ test_parser <- function() {
   ver <- "1.0.0"
   init_command_line_parser('MyRprogram.R','My test program', ver)
 
-  reg_argument("--pretty","-p","pretty",FALSE,argsType$TypeBool,'make pretty')
-  reg_argument("--infile","-i","infile",NA,argsType$TypeValue,'select mode')
+  reg_argument("--plot","-p","plot",FALSE,argsType$TypeBool,'plot output')
+  reg_argument("--infile","-i","infile",NA,argsType$TypeValue,'select infile')
   reg_argument("--outfile","-o","outfile",NA,argsType$TypeValue,'specify outfile')
-  reg_argument("--date","-d","date",NA,argsType$TypeValue,'select date')
-  reg_argument("--noshort",NA,"noshort",FALSE,argsType$TypeBool, "no short form")
+  reg_argument("--date","-d","date",NA,argsType$TypeValue,'specify date')
+  reg_argument("--noshort",NA,"noshort",FALSE,argsType$TypeBool, "no short form argument")
   reg_argument("--keyword","-k","keyword",NA,argsType$TypeMultiVal,'keywords')
 
 #  test to ensure --ver/-V not added if a conflicting param is already registered
@@ -420,14 +425,16 @@ test_parser <- function() {
   reg_subcmd("del1", "delete", "delete subcommand 1")
   
   cmdline <- c("delete", "del1", "-o", "myfilename.txt", "-p", "--date=2019-12-31", 
-               "--noshort", "-k", "key1", "-k", "key2")
+               "--noshort", "-z", "-k", "key1", "-k", "key2")
+  
+  writeLines ("Command line:")
+  writeLines (paste(cmdline, collapse = ' '))
+  
   mydata <- parse_command_line(cmdline)
   usage()
   
-  writeLines ("\nCommand line:")
-  print (cmdline)
   writeLines ("\nAfter parse_command_line()...")
-  writeLines (paste("pretty:", mydata$pretty))
+  writeLines (paste("plot:", mydata$plot))
   writeLines (paste("infile:", mydata$infile))
   writeLines (paste("outfile:",mydata$outfile))
   writeLines (paste("date:",mydata$date))
@@ -438,13 +445,14 @@ test_parser <- function() {
   writeLines (paste("keyword:",mydata$keyword))
   writeLines ('')
 
-  writeLines (paste("Date =", mydata$date))
+  writeLines ("Parsing dates...")
+  writeLines (paste("Date:", mydata$date))
   print (parse_date(mydata$date))
-  writeLines ("Date = 2019-12")
+  writeLines ("Date: 2019-12")
   print (parse_date("2019-12"))
-  writeLines ("Date = 2019")
+  writeLines ("Date: 2019")
   print (parse_date("2019"))
-  writeLines ("Date = 2019-13-31")
+  writeLines ("Date: 2019-13-31")
   print (parse_date("2019-13-31")) # bad date!
 } # test_parser()
 
