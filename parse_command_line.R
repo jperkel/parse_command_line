@@ -1,6 +1,8 @@
 ##########################
 ## parse_command_line.R: functions for parsing command line parameters
 ##
+## (c) 2019 Jeffrey M. Perkel
+##
 ## Version history
 ## 1.0.0 -- 12 Jul 2019 -- initial release
 ## 1.0.1 -- 16 Jul 2019 -- autogenerate usage display
@@ -12,12 +14,12 @@ suppressPackageStartupMessages({
 })
 
 # set debug to TRUE to see debug messages
-debug <- FALSE
+debug <- TRUE
 
 
 debug_print <- function (s) {
    if (debug == TRUE) {
-     if (is.character(s)) writeLines(s)
+     if (is.character (s)) writeLines (s)
      else print (s)
    }
 }
@@ -29,9 +31,9 @@ args_table <- data.frame(lparam = NA, sparam = NA, var = NA, default = NA, argTy
 cmds_table <- data.frame(cmd = NA, desc = NA, stringsAsFactors = FALSE)
 subcmds_table <- data.frame(subcmd = NA, parent = NA, desc = NA, stringsAsFactors = FALSE)
 
-desc_str <- NA
-script <- NA
-ver <- NA
+desc_str <- NA # a short description, eg eg "My test program"
+script <- NA # name of the program, eg "MyProgram.R"
+ver <- NA # version number, eg "1.0.0"
 
 # Define an enum for different modes; access with argsType$<enum_element>
 # ht https://stackoverflow.com/questions/33838392/enum-like-arguments-in-r
@@ -82,7 +84,7 @@ usage <- function() {
   if (nrow(cmds_table) > 0) {
     cmds_table <- cmds_table[order(cmds_table$cmd),]
     
-    writeLines('COMMANDS:')
+    writeLines('  COMMANDS:')
     for (r in 1:nrow(cmds_table)) {
       myrow <- cmds_table[r,]
       writeLines(paste('\t',str_pad(myrow$cmd, max(nchar(myrow$cmd)), "right"), 
@@ -100,7 +102,7 @@ usage <- function() {
     writeLines('')
   } # if (nrow(cmds_table) > 0)
 
-  writeLines('PARAMETERS:')
+  writeLines('  PARAMETERS:')
   writeLines(paste0('\t',str_pad(args_table$lparam, max(nchar(args_table$lparam)), "right"),
                     # need 5 spaces to account for missing sparam, eg ' (-m)'
                    ifelse (!is.na(args_table$sparam), paste0(' (', args_table$sparam, ')'), 
@@ -143,7 +145,7 @@ reg_command <- function(cmd, desc = '') {
   }
   
   if (cmd %in% cmds_table$cmd ) {
-    writeLines(paste0("Warning: reg_command(): duplicated command: ", cmd))
+    stop(paste0("Error: reg_command(): duplicated command: ", cmd), call. = FALSE)
   }
   
   my_df <- data.frame(cmd = cmd, desc = desc, stringsAsFactors = FALSE)
@@ -169,6 +171,10 @@ reg_subcmd <- function(subcmd = subcmd, parent = parent, desc = '') {
   
   if (!(parent %in% cmds_table$cmd)) {
     stop(paste0("Error: reg_subcmd(): Parent command not initialized: ", parent), call. = FALSE)
+  }
+  
+  if (subcmd %in% subcmds_table$subcmd) {
+    stop(paste0("Error: reg_subcmd(): duplicated subcommand: ", subcmd), call. = FALSE)
   }
   
   my_df <- data.frame(subcmd = subcmd, parent = parent, desc = desc, stringsAsFactors = FALSE)
@@ -384,8 +390,8 @@ parse_date <- function(d) {
   else if (grepl('^[0-9]{4}-[0-9]{2}$', d) == TRUE) {
     year <- as.integer(substr(d, 1, 4))
     month <- as.integer(substr(d, 6, 7))
-    if ( (is.na(year)) |
-         (is.na(month)) |
+    if ( (is.na(year)) ||
+         (is.na(month)) ||
          !(month %in% 1:12)) {
       stop (paste("parse_date(): Bad date format:", d), call. = FALSE)
     }
@@ -406,15 +412,18 @@ parse_date <- function(d) {
 test_parser <- function() {
   ver <- "1.0.0"
   init_command_line_parser('MyRprogram.R','My test program', ver)
-
+  
+  # an example TypeBool; default == FALSE; if used in cmdline, will be set to TRUE
   reg_argument("--plot","-p","plot",FALSE,argsType$TypeBool,'plot output')
+  # example TypeValue arguments. Use as '--lparam=val', '--lparam val', or '-l val'
   reg_argument("--infile","-i","infile",NA,argsType$TypeValue,'select infile')
   reg_argument("--outfile","-o","outfile",NA,argsType$TypeValue,'specify outfile')
   reg_argument("--date","-d","date",NA,argsType$TypeValue,'specify date')
+  # an example lparam w/ no sparam
   reg_argument("--noshort",NA,"noshort",FALSE,argsType$TypeBool, "no short form argument")
+  # an example TypeMultiVal, where all supplied params are stored
   reg_argument("--keyword","-k","keyword",NA,argsType$TypeMultiVal,'keywords')
-
-#  test to ensure --ver/-V not added if a conflicting param is already registered
+  #  test to ensure --ver/-V not added if a conflicting param is already registered
   reg_argument("--verify","-V","verify",FALSE,argsType$TypeBool,'verify something')
   
   reg_command("add", "add a value")
@@ -425,15 +434,17 @@ test_parser <- function() {
   reg_subcmd("add2", "add", "add subcmd 2")
   reg_subcmd("add3", "add", "add subcmd 3")
   reg_subcmd("del1", "delete", "delete subcommand 1")
+  reg_subcmd("del2", "delete", "delete subcommand 2")
   
   cmdline <- c("delete", "del1", "-o", "myfilename.txt", "-p", "--date=2019-12-31", 
                "--noshort", "-z", "-k", "key1", "-k", "key2")
   
+  usage()
+  
   writeLines ("Command line:")
   writeLines (paste(cmdline, collapse = ' '))
-  
+  writeLines ('')
   mydata <- parse_command_line(cmdline)
-  usage()
   
   writeLines ("\nAfter parse_command_line()...")
   writeLines (paste("plot:", mydata$plot))
@@ -445,9 +456,8 @@ test_parser <- function() {
   writeLines (paste("subcommand:",mydata$subcmd))
   writeLines (paste("noshort:",mydata$noshort))
   writeLines (paste("keyword:",mydata$keyword))
-  writeLines ('')
 
-  writeLines ("Parsing dates...")
+  writeLines ("\nParsing dates...")
   writeLines (paste("Date:", mydata$date))
   print (parse_date(mydata$date))
   writeLines ("Date: 2019-12")
