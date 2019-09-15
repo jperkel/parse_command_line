@@ -444,17 +444,16 @@ test_parser <- function() {
   reg_subcmd("add3", "add", "add subcmd 3")
   reg_subcmd("del1", "delete", "delete subcommand 1")
   reg_subcmd("del2", "delete", "delete subcommand 2")
-  
-#  cmdline <- c("delete", "del1", "-o", "myfilename.txt", "-p", "--date=2019-12-31", 
-#               "--noshort", "-z", "-k", "key1", "-k", "key2")
-  
-  writeLines ("Running usage()")
+  writeLines ("Done!")
+
+  writeLines ("\nRunning usage()...")
   usage()
-  
-  writeLines ("Command line:")
-  writeLines (paste(cmdline, collapse = ' '))
-  writeLines ('')
+  writeLines ("Done!")
+
+  writeLines ("\nParsing command line...")
+  writeLines (paste("Command line:", paste(cmdline, collapse = ' '), '\n'))
   mydata <- parse_command_line(cmdline)
+  writeLines ("Done!")
   
   writeLines ("\nAfter parse_command_line()...")
   writeLines (paste("plot:", mydata$plot))
