@@ -105,7 +105,7 @@ usage <- function() {
   writeLines('  PARAMETERS:')
   writeLines(paste0('\t',str_pad(args_table$lparam, max(nchar(args_table$lparam)), "right"),
                     # need 5 spaces to account for missing sparam, eg ' (-m)'
-                   ifelse (!is.na(args_table$sparam), paste0(' (', args_table$sparam, ')'), 
+                   ifelse (args_table$sparam != '', paste0(' (', args_table$sparam, ')'), 
                            paste(rep(' ', 5), collapse = '')),
                    ifelse (args_table$desc == '', '', ': '), 
                    args_table$desc, 
@@ -412,7 +412,7 @@ parse_date <- function(d) {
 test_parser <- function() {
   # parser needs to be initialized. Let's see what it returns if not
   cmdline <- c("delete", "del1", "-o", "myfilename.txt", "-p", "--date=2019-12-31", 
-               "--noshort", "-z", "-k", "key1", "-k", "key2")
+               "--noshort", "-z", "-k", "key1", "-k", "key2", "-n")
   
   writeLines ("What if the parser isn't initialized?")
   mydata <- parse_command_line(cmdline)
@@ -428,8 +428,9 @@ test_parser <- function() {
   reg_argument("--infile","-i","infile",NA,argsType$TypeValue,'select infile')
   reg_argument("--outfile","-o","outfile",NA,argsType$TypeValue,'specify outfile')
   reg_argument("--date","-d","date",NA,argsType$TypeValue,'specify date')
-  # an example lparam w/ no sparam
+  # an example lparam w/ no sparam & vis versa
   reg_argument("--noshort",NA,"noshort",FALSE,argsType$TypeBool, "no short form argument")
+  reg_argument('','-n',"nolong",FALSE,argsType$TypeBool, "no long form argument")
   # an example TypeMultiVal, where all supplied params are stored
   reg_argument("--keyword","-k","keyword",NA,argsType$TypeMultiVal,'keywords')
   #  test to ensure --ver/-V not added if a conflicting param is already registered
@@ -464,6 +465,7 @@ test_parser <- function() {
   writeLines (paste("command:",mydata$command))
   writeLines (paste("subcommand:",mydata$subcmd))
   writeLines (paste("noshort:",mydata$noshort))
+  writeLines (paste("nolong:",mydata$nolong))
   writeLines (paste("keyword:",mydata$keyword))
 
   writeLines ("\nParsing dates...")
