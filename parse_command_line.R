@@ -397,7 +397,7 @@ parse_date <- function(d) {
     }
   }
   else if (grepl('^[0-9]{4}$', d) == TRUE) {
-    year <- as.integer(substr(d, 1, 4))
+    year <- as.integer(d)
     if (is.na(year)) {
       stop (paste("parse_date(): Bad date format:", d), call. = FALSE)
     }
@@ -405,7 +405,7 @@ parse_date <- function(d) {
   else {
     stop (paste("parse_date(): Bad date format:", d), call. = FALSE)
   }
-  return(as.integer(c(year, month, day)))
+  return(c(year, month, day))
 } # parse_date
 
 
