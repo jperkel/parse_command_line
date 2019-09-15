@@ -11,7 +11,9 @@ suppressPackageStartupMessages({
   library(tidyverse)
 })
 
+# set debug to TRUE to see debug messages
 debug <- FALSE
+
 
 debug_print <- function (s) {
    if (debug == TRUE) {
@@ -413,7 +415,7 @@ test_parser <- function() {
   reg_argument("--keyword","-k","keyword",NA,argsType$TypeMultiVal,'keywords')
 
 #  test to ensure --ver/-V not added if a conflicting param is already registered
-#  reg_argument("--verify","-V","verify",FALSE,argsType$TypeBool,'verify something')
+  reg_argument("--verify","-V","verify",FALSE,argsType$TypeBool,'verify something')
   
   reg_command("add", "add a value")
   reg_command("delete", "delete a value")
@@ -456,4 +458,5 @@ test_parser <- function() {
   print (parse_date("2019-13-31")) # bad date!
 } # test_parser()
 
+# comment out for regular use
 test_parser()
