@@ -173,7 +173,8 @@ reg_subcmd <- function(subcmd = subcmd, parent = parent, desc = '') {
     stop(paste0("Error: reg_subcmd(): Parent command not initialized: ", parent), call. = FALSE)
   }
   
-  if (subcmd %in% subcmds_table$subcmd) {
+  subtable <- subcmds_table[subcmds_table$parent == parent,]
+  if (subcmd %in% subtable$subcmd) {
     stop(paste0("Error: reg_subcmd(): duplicated subcommand: ", subcmd), call. = FALSE)
   }
   
@@ -445,6 +446,7 @@ test_parser <- function() {
   reg_subcmd("add3", "add", "add subcmd 3")
   reg_subcmd("del1", "delete", "delete subcommand 1")
   reg_subcmd("del2", "delete", "delete subcommand 2")
+  reg_subcmd("add1", "revise", "revise subcmd 1")
   writeLines ("Done!")
 
   writeLines ("\nRunning usage()...")
