@@ -12,8 +12,8 @@ To use:
 4) Register optional commands with `reg_command`, and subcommands with `reg_subcmd`. For instance, you might want to support an `add` command: `reg_command ("add", "Add a value")`, with two subcommands: `reg_subcommand ("name", "add", "Add a new name")` and `reg_subcommand ("phone", "add", "Add a new phone number")`. 
 - Note that if a command is registered, one must be provided on the command line. The command is assumed to be the first argument; subcommands are assumed to be the second argument. eg, `MyProgram.R add phone <params>`
 5) Collect command line arguments on your script with `args <- commandArgs(trailingOnly = TRUE)`. 
-6) Pass those arguments to the parser with `user_args <- parse_command_line(args)`.
-7) Access the resulting values as list elements in `user_args`. eg, `user_args$outfile` or `user_args$command`. Unrecognized parameters will be stored in `user_args$unknowns`.
+6) Pass those arguments to the parser with eg `user_args <- parse_command_line(args)`.
+7) Access the resulting values as list elements in `user_args`. eg, `user_args$outfile`. Commands and subcommands are stored in `user_args$command` and `user_args$subcmd`, respectively. Unrecognized parameters will be stored in `user_args$unknowns`.
 
 The parser provides a built-in `usage()` function, which generates a formatted help message. If lparam `--help` and sparam `-?` are not otherwise used, it will automatically interpret those to generate a help message. If lparam `--ver` and sparam `-V` are not used, it will interpret those to output the script version information. 
 
