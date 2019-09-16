@@ -328,7 +328,19 @@ parse_command_line <- function(args) {
     debug_print (myrow)
     if (!is.null(myrow)) {
       if(myrow$argType == argsType$TypeBool) { # if the param is a logical type, save the opposite logical type
-        mydata[[myrow$var]] <- !as.logical(myrow$default)
+        if ((p == myrow$sparam && !is.na(myrow$sparam)) || (p == myrow$lparam && !is.na(myrow$lparam))) {
+          # if the argument exactly matches lparam or sparam
+          mydata[[myrow$var]] <- !as.logical(myrow$default)
+        }
+        else { # we also accept param=Val (--lparam=TRUE, =FALSE, =T, =F)
+          val <- as.logical(strsplit(p, "=")[[1]][2])
+          if (is.na(val)) {
+            unk <- unk + 1
+            mydata[["unknowns"]][unk] <- p
+            writeLines (paste("Warning: parse_command_line(): bad Boolean value (use T/F):", p))
+          }
+          else mydata[[myrow$var]] <- val
+        }
       }
       # TypeValue; store either what is after the '=', or the next param in the arg string
       # sparam <value> || lparam <value>
@@ -412,7 +424,7 @@ parse_date <- function(d) {
 
 test_parser <- function() {
   # parser needs to be initialized. Let's see what it returns if not
-  cmdline <- c("delete", "del1", "-o", "myfilename.txt", "-p", "--date=2019-12-31", 
+  cmdline <- c("delete", "del1", "-o", "myfilename.txt", "--plot=T", "--date=2019-12-31", 
                "--noshort", "-z", "-k", "key1", "-k", "key2", "-n")
   
   writeLines ("What if the parser isn't initialized?")
