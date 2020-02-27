@@ -1,7 +1,7 @@
 # parse_command_line.R
 This utility simplifies command line parsing for R scripts. It supports optional commands and subcommands, and both Boolean and value-based arguments. 
 
-Suppose you have a script for creating and reading an address book. You might call it like so: `Rscript add name 'Jane Smith'`. `parse_command_line.R` interprets the arguments to `Rscript` so you don't have to. 
+Suppose you have a script for creating and reading an address book. You might call it like so: `MyRprogram.R add name 'Jane Smith'`. `parse_command_line.R` interprets the arguments to `Rscript` so you don't have to. 
 
 To use, call `init_command_line_parser()` to initialize the parsing tool. Then call `reg_argument()` (or `reg_argument_list()`) to register expected command line arguments, `reg_command()` or `reg_command_list()` to register expected commands, and `reg_subcmd()` or `reg_subcmd_list()` for subcommands. 
 
@@ -90,7 +90,7 @@ To use this tool:
 - `sparam` is optional in `reg_argument()`. eg: `reg_argument("--print",NA,"print",FALSE,argsType$TypeBool,"print output")`
 - Arguments can also be supplied as a list of lists in a single call. For example, using `args <- list(list("--plot","-p","plot",FALSE,argsType$TypeBool,"plot output"), list("--outfile","-o","outfile",NA,argsType$TypeValue,'specify outfile'))` and `reg_argument_list(args)`.
 4) Register optional commands with `reg_command()`, and subcommands with `reg_subcmd()`. For instance, you might want to support an `add` command: `reg_command ("add", "Add a value")`, with two subcommands: `reg_subcommand ("name", "add", "Add a new name")` and `reg_subcommand ("phone", "add", "Add a new phone number")`. 
-- Note that if a command is registered, one must be provided on the command line. The command is assumed to be the first argument; subcommands are assumed to be the second argument. eg, `MyProgram.R add phone <params>`
+- Note that if a command is registered, one must be provided on the command line. The command is assumed to be the first argument; subcommands are assumed to be the second argument. eg, `MyRprogram.R add phone <params>`
 - Commands and subcommands can also be supplied as a list in a single call using `reg_commands_list()` and `reg_subcommand_list()`, respectively.
 5) Collect command line arguments on your script with `args <- commandArgs(trailingOnly = TRUE)`. 
 6) Pass those arguments to the parser with eg `myargs <- parse_command_line(args)`.
