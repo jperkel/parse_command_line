@@ -1,7 +1,7 @@
 # parse_command_line.R
 This utility simplifies command line parsing for R scripts. It supports optional commands and subcommands, and both Boolean and value-based arguments. 
 
-Suppose you have a script for creating and reading an address book. You might call it like so: `MyRprogram.R add name 'Jane Smith'`. `parse_command_line.R` interprets the arguments to `Rscript` so you don't have to. 
+Suppose you have a script for creating and reading an address book. You might call it like so: `MyRprogram.R add name 'Jane Smith'`. `parse_command_line.R` interprets the arguments to `MyRprogram.R` so you don't have to. 
 
 To use, call `init_command_line_parser()` to initialize the parsing tool. Then call `reg_argument()` (or `reg_argument_list()`) to register expected command line arguments, `reg_command()` or `reg_command_list()` to register expected commands, and `reg_subcmd()` or `reg_subcmd_list()` for subcommands. 
 
