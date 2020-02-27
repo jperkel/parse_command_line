@@ -455,7 +455,7 @@ parse_command_line <- function(args) {
 
 
 ##
-## Parses a date in YYYY-MM-DD, YYYY-MM or YYYY format and returns a tuple: c(y, m, d)
+## Parses a date in YYYY-MM-DD, YYYYMMDD, YYYY-MM or YYYY format and returns a tuple: c(y, m, d)
 ## 
 parse_date <- function(d) {
   year <- NA

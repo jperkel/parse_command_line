@@ -9,13 +9,13 @@ To use:
 - Valid parameter types are `argsType$TypeBool` for Boolean values; `argsType$TypeValue` for arguments of type `--outfile=file`, `--outfile file`, and `-o file`; and `argsType$TypeMultiVal` for parameters where multiple values can be supplied, such as keywords: `-k key1 -k key2`. 
 - If `argsType$TypeBool` is used, using the argument flips the default Boolean value. So for instance, if you call `reg_argument("--plot","-p","plot",FALSE,argsType$TypeBool,'plot output')`, the default value of `plot` will be `FALSE`. If `--plot` is included in the argument list it will be set to `TRUE`. Arguments of the form `--plot=TRUE` are also allowed.
 - `sparam` is optional in `reg_argument()`. eg: `reg_argument("--print",NA,"print",FALSE,argsType$TypeBool,"print output")`
+- Arguments can also be supplied as a list of lists in a single call. For example, using `args <- list(list("--plot","-p","plot",FALSE,argsType$TypeBool,"plot output"), list("--outfile","-o","outfile",NA,argsType$TypeValue,'specify outfile'))` and `reg_argument_list(args)`.
 4) Register optional commands with `reg_command`, and subcommands with `reg_subcmd`. For instance, you might want to support an `add` command: `reg_command ("add", "Add a value")`, with two subcommands: `reg_subcommand ("name", "add", "Add a new name")` and `reg_subcommand ("phone", "add", "Add a new phone number")`. 
 - Note that if a command is registered, one must be provided on the command line. The command is assumed to be the first argument; subcommands are assumed to be the second argument. eg, `MyProgram.R add phone <params>`
+- Commands and subcommands can also be supplied as a list in a single call using `reg_commands_list()` and `reg_subcommand_list()`, respectively.
 5) Collect command line arguments on your script with `args <- commandArgs(trailingOnly = TRUE)`. 
 6) Pass those arguments to the parser with eg `myargs <- parse_command_line(args)`.
 7) Access the resulting values as list elements in `myargs`. eg, `myargs$outfile`. Commands and subcommands are stored in `myargs$command` and `myargs$subcmd`, respectively. Unrecognized parameters will be stored in `myargs$unknowns`.
-
-Arguments, commands and subcommands can also be supplied in a single call, as lists. For example, using `cmds <- list(list("cmd1", "desc1"), list("cmd2", "desc2"))` and `reg_commands_list(cmds)`.
 
 The parser provides a built-in `usage()` function, which generates a formatted help message. If lparam `--help` and sparam `-?` are not otherwise used, it will automatically interpret those to generate a help message. If lparam `--ver` and sparam `-V` are not used, it will interpret those to output the script version information. 
 
