@@ -15,6 +15,8 @@ To use:
 6) Pass those arguments to the parser with eg `myargs <- parse_command_line(args)`.
 7) Access the resulting values as list elements in `myargs`. eg, `myargs$outfile`. Commands and subcommands are stored in `myargs$command` and `myargs$subcmd`, respectively. Unrecognized parameters will be stored in `myargs$unknowns`.
 
+Arguments, commands and subcommands can also be supplied in a single call, as lists. For example, using `cmds <- list(list("cmd1", "desc1"), list("cmd2", "desc2"))` and `reg_commands_list(cmds)`.
+
 The parser provides a built-in `usage()` function, which generates a formatted help message. If lparam `--help` and sparam `-?` are not otherwise used, it will automatically interpret those to generate a help message. If lparam `--ver` and sparam `-V` are not used, it will interpret those to output the script version information. 
 
 A `parse_date()` function is provided for handling dates. It supports dates in the format `YYYY-MM-DD`, `YYYYMMDD`, `YYYY-MM`, and `YYYY`. The return value is a tuple of integers: `c(year, month, date)`. For instance, `parse_date("2019-12-31")` returns `c(2019, 12, 31)`; `parse_date("2019-12")` returns `c(2019, 12, NA)`.
