@@ -8,6 +8,7 @@
 ## 1.0.1 -- 16 Jul 2019 -- autogenerate usage display
 ## 1.0.2 -- 28 Jul 2019 -- support parsing of commands
 ## 1.0.3 -- 26 Aug 2019 -- add subcommand support
+## 1.0.4 -- 27 Feb 2020 -- args, cmds and subcmds can be supplied as lists
 ##########################
 suppressPackageStartupMessages({
   library(tidyverse)
@@ -154,6 +155,29 @@ reg_command <- function(cmd, desc = '') {
 
 
 ##
+## register commands using a list, eg:
+## cmds <- list (list("cmd1", "desc1"), list("cmd2", "desc2"))
+## reg_command_list (cmds)
+##
+reg_command_list <- function(clist) {
+  if (is.na(desc_str)) {
+    stop("Error: reg_command(): Command line parser not initialized.", call. = FALSE)
+  }
+  
+  ids <- c("cmd","desc")
+  for (c in clist) {
+    stopifnot(length(c) == length(ids))
+    my_df <- data.frame(cmd = c[[1]], desc = c[[2]], stringsAsFactors = FALSE)
+    cmds_table <<- rbind(cmds_table, my_df) 
+  }
+  if (any(duplicated(cmds_table$cmd))) {
+    stop(paste0("Error: reg_command_list(): duplicated command: ", 
+                cmds_table$cmd[duplicated(cmds_table$cmd)]), call. = FALSE)
+  }
+} # reg_command_list
+
+  
+##
 ## Register required subcommands. Use for programs with syntax: 
 ##    myprog.R <COMMAND> <SUBCOMMMAND> [optional-params]
 ##
@@ -169,9 +193,9 @@ reg_subcmd <- function(subcmd = subcmd, parent = parent, desc = '') {
     stop("Error: reg_subcmd(): Command line parser not initialized.", call. = FALSE)
   }
   
-  if (!(parent %in% cmds_table$cmd)) {
-    stop(paste0("Error: reg_subcmd(): Parent command not initialized: ", parent), call. = FALSE)
-  }
+  # if (!(parent %in% cmds_table$cmd)) {
+  #   stop(paste0("Error: reg_subcmd(): Parent command not initialized: ", parent), call. = FALSE)
+  # }
   
   subtable <- subcmds_table[subcmds_table$parent == parent,]
   if (subcmd %in% subtable$subcmd) {
@@ -181,6 +205,30 @@ reg_subcmd <- function(subcmd = subcmd, parent = parent, desc = '') {
   my_df <- data.frame(subcmd = subcmd, parent = parent, desc = desc, stringsAsFactors = FALSE)
   subcmds_table <<- rbind(subcmds_table, my_df)
 } # reg_subcmd
+
+
+##
+## register subcommands using a list, eg:
+## subcmds <- list (list("subcmd1","parent1", "desc1"), list("subcmd2", "parent2", "desc2"))
+## reg_subcmd_list (subcmds)
+##
+reg_subcmd_list <- function(slist) {
+  if (is.na(desc_str)) {
+    stop("Error: reg_subcmd_list(): Command line parser not initialized.", call. = FALSE)
+  }
+  
+  ids <- c("subcmd","parent","desc")
+  for (s in slist) {
+    stopifnot(length(s) == length(ids))
+    my_df <- data.frame(subcmd = s[[1]], parent = s[[2]], desc = s[[3]], stringsAsFactors = FALSE)
+
+    subtable <- subcmds_table[subcmds_table$parent == my_df$parent,]
+    if (my_df$subcmd %in% subtable$subcmd) {
+      stop(paste0("Error: reg_subcmd_list(): duplicated subcommand: ", my_df$subcmd), call. = FALSE)
+    }
+    subcmds_table <<- rbind(subcmds_table, my_df)
+  }
+} # reg_subcmd_list
 
 
 ##
@@ -212,6 +260,38 @@ reg_argument <- function(lparam, sparam, var, default, argType, desc = '') {
                       desc = desc, stringsAsFactors = FALSE)
   args_table <<- rbind(args_table, my_df) 
 } # reg_argument
+
+
+##
+## Register command line arguments using a list, eg
+## args <- list (list("lparam1", "sparam1", "var1", default1, argType1, "desc1), 
+##               list("lparam2", "sparam2", "var2", default2, argType2, "desc2))
+## reg_argument_list(args)
+##
+reg_argument_list <- function(plist) {
+  if (is.na(desc_str)) {
+    stop("Error: reg_argument_list(): Command line parser not initialized.", call. = FALSE)
+  }
+  
+  ids <- c("lparam","sparam","var","default","argType","desc")
+  for (p in plist) {
+    stopifnot(length(p) == length(ids))
+    my_df <- data.frame(lparam = p[[1]], sparam = p[[2]], var = p[[3]], default = p[[4]], 
+                        argType = p[[5]], desc = p[[6]], stringsAsFactors = FALSE)
+    args_table <<- rbind(args_table, my_df) 
+  }
+  debug_print(args_table)
+  if (any(duplicated(args_table$lparam[!is.na(args_table$lparam)]))) { 
+    tmp <- args_table$lparam[!is.na(args_table$lparam)]
+    stop(paste0("reg_argument_list(): duplicated lparam: ", 
+                tmp[duplicated(tmp)]), call. = FALSE)
+  }
+  if (any(duplicated(args_table$sparam[!is.na(args_table$sparam)]))) { 
+    tmp <- args_table$sparam[!is.na(args_table$sparam)]
+    stop(paste0("reg_argument_list(): duplicated sparam: ", 
+                tmp[duplicated(tmp)]), call. = FALSE)
+  }
+} # reg_argument_list
 
 
 ##
@@ -434,30 +514,52 @@ test_parser <- function() {
   writeLines ("\nLet's initialize it...")
   ver <- "1.0.0"
   init_command_line_parser('MyRprogram.R','My test program', ver)
-  
+
+  # we can register arguments one at a time, eg:  
   # an example TypeBool; default == FALSE; if used in cmdline, will be set to TRUE
   reg_argument("--plot","-p","plot",FALSE,argsType$TypeBool,'plot output')
   # example TypeValue arguments. Use as '--lparam=val', '--lparam val', or '-l val'
   reg_argument("--infile","-i","infile",NA,argsType$TypeValue,'select infile')
-  reg_argument("--outfile","-o","outfile",NA,argsType$TypeValue,'specify outfile')
-  reg_argument("--date","-d","date",NA,argsType$TypeValue,'specify date')
-  # an example lparam w/ no sparam
-  reg_argument("--noshort",NA,"noshort",FALSE,argsType$TypeBool, "no short form argument")
-  # an example TypeMultiVal, where all supplied params are stored
-  reg_argument("--keyword","-k","keyword",NA,argsType$TypeMultiVal,'keywords')
-  #  test to ensure --ver/-V not added if a conflicting param is already registered
-  reg_argument("--verify","-V","verify",FALSE,argsType$TypeBool,'verify something')
-  
-  reg_command("add", "add a value")
-  reg_command("delete", "delete a value")
-  reg_command("revise", "revise a value")
 
+  # or we can register in a single call, as a list, eg:
+  params <- list(
+    # example TypeValue arguments. Use as '--lparam=val', '--lparam val', or '-l val'
+    list("--outfile","-o","outfile",NA,argsType$TypeValue,'specify outfile'),
+    list("--date","-d","date",NA,argsType$TypeValue,'specify date'),
+    # an example lparam w/ no sparam
+    list("--noshort",NA,"noshort",FALSE,argsType$TypeBool, "no short form argument"),
+    # an example TypeMultiVal, where all supplied params are stored
+    list("--keyword","-k","keyword",NA,argsType$TypeMultiVal,'keywords'),
+    #  test to ensure --ver/-V not added if a conflicting param is already registered
+    list("--verify","-V","verify",FALSE,argsType$TypeBool,'verify something')
+  )
+  reg_argument_list(params)
+  
+  # we can register commands one at a time...
+  # reg_command("add", "add a value")
+  # reg_command("delete", "delete a value")
+  # reg_command("revise", "revise a value")
+  
+  # or as a list
+  cmds <- list(
+    list("add", "add a value"),
+    list("delete", "delete a value"),
+    list("revise", "revise a value")
+  )
+  reg_command_list(cmds)
+
+  # and we can register subcommands one at a time or as a list.
   reg_subcmd("add1", "add", "add subcmd 1")
   reg_subcmd("add2", "add", "add subcmd 2")
   reg_subcmd("add3", "add", "add subcmd 3")
-  reg_subcmd("del1", "delete", "delete subcommand 1")
-  reg_subcmd("del2", "delete", "delete subcommand 2")
-  reg_subcmd("add1", "revise", "revise subcmd 1")
+
+  subcmds <- list(
+    list("del1", "delete", "delete subcommand 1"),
+    list("del2", "delete", "delete subcommand 2"),
+    list("add1", "revise", "revise subcmd 1")
+  )
+  reg_subcmd_list(subcmds)
+  
   writeLines ("Done!")
 
   writeLines ("\nRunning usage()...")
