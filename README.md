@@ -1,9 +1,11 @@
 # parse_command_line.R
 This utility simplifies command line parsing for R scripts. It supports optional commands and subcommands, and both Boolean and value-based arguments. 
 
-Suppose you have a script for creating and reading an address book. You might call it like so: `MyRprogram.R add name 'Jane Smith'`. `parse_command_line.R` interprets the arguments to `MyRprogram.R` so you don't have to. 
+Suppose you want to write a script for creating and maintaining a check book. You might call it like so: `MyCheckbook.R withdraw cash --amount=100` to indicate that you took out some cash at the ATM. `parse_command_line.R` interprets the arguments to `MyCheckbook.R` so you don't have to. 
 
 To use, call `init_command_line_parser()` to initialize the parsing tool. Then call `reg_argument()` (or `reg_argument_list()`) to register expected command line arguments, `reg_command()` or `reg_command_list()` to register expected commands, and `reg_subcmd()` or `reg_subcmd_list()` for subcommands. 
+
+For instance, to indicate a withdrawal of $100 in cash, you might call `MyCheckbook.R withdraw cash --amount=100 --msg='birthday gift'`. Here, `withdraw` is the command, `cash` is a subcommand and `--amount=100` and `msg='birthday gift'` are arguments. You might also add a `deposit` command, and a `check` subcommand, eg `MyCheckbook.R withdraw check --number 123 --amount=50 --payee='Electric Co.'` to log check #123 to the electric company in the amount of $50.)
 
 When registering arguments, you must indicate the type of value you expect to receive. Valid parameter types are `argsType$TypeBool` for Boolean values; `argsType$TypeValue` for arguments of type `--outfile=file`, `--outfile file`, and `-o file`; and `argsType$TypeMultiVal` for parameters where multiple values can be supplied, such as keywords: `-k key1 -k key2`. 
 
