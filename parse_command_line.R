@@ -504,87 +504,111 @@ parse_date <- function(d) {
 
 test_parser <- function() {
   # parser needs to be initialized. Let's see what it returns if not
-  cmdline <- c("delete", "del1", "-o", "myfilename.txt", "--plot=T", "--date=2019-12-31", 
-               "--noshort", "-z", "-k", "key1", "-k", "key2", "-n")
+  cmdline <- c("withdraw", "cash", "--amount=100", "--msg='birthday gift'", "foo")
   
   writeLines ("What if the parser isn't initialized?")
   mydata <- parse_command_line(cmdline)
   print (mydata)
   
   writeLines ("\nLet's initialize it...")
-  ver <- "1.0.0"
-  init_command_line_parser('MyRprogram.R','My test program', ver)
+  init_command_line_parser('MyCheckbook.R','My checkbook program', '1.0.0')
 
   # we can register arguments one at a time, eg:  
   # an example TypeBool; default == FALSE; if used in cmdline, will be set to TRUE
-  reg_argument("--plot","-p","plot",FALSE,argsType$TypeBool,'plot output')
+  reg_argument("--plot",NA,"plot",FALSE,argsType$TypeBool,'plot output')
   # example TypeValue arguments. Use as '--lparam=val', '--lparam val', or '-l val'
-  reg_argument("--infile","-i","infile",NA,argsType$TypeValue,'select infile')
+  reg_argument("--infile","-i","infile",NA,argsType$TypeValue,'location of your checkbook file')
 
   # or we can register in a single call, as a list, eg:
-  params <- list(
+  arguments <- list(
     # example TypeValue arguments. Use as '--lparam=val', '--lparam val', or '-l val'
-    list("--outfile","-o","outfile",NA,argsType$TypeValue,'specify outfile'),
+    list("--outfile","-o","outfile",NA,argsType$TypeValue,'location of output file'),
     list("--date","-d","date",NA,argsType$TypeValue,'specify date'),
-    # an example lparam w/ no sparam
-    list("--noshort",NA,"noshort",FALSE,argsType$TypeBool, "no short form argument"),
+    list("--msg","-m","msg",NA,argsType$TypeValue,'memo line message'),
+    list("--amount","-a","amount",NA,argsType$TypeValue,'specify dollar amount'),
+    list("--payee","-p","payee",NA,argsType$TypeValue,'specify payee'),
+    list("--number","-n","cknum",NA,argsType$TypeValue,'specify check number'),
     # an example TypeMultiVal, where all supplied params are stored
-    list("--keyword","-k","keyword",NA,argsType$TypeMultiVal,'keywords'),
-    #  test to ensure --ver/-V not added if a conflicting param is already registered
-    list("--verify","-V","verify",FALSE,argsType$TypeBool,'verify something')
+    list("--keyword","-k","keyword",NA,argsType$TypeMultiVal,'keywords')
   )
-  reg_argument_list(params)
+  reg_argument_list(arguments)
   
   # we can register commands one at a time...
-  # reg_command("add", "add a value")
-  # reg_command("delete", "delete a value")
-  # reg_command("revise", "revise a value")
+  # reg_command("withdraw", "add a withdrawal")
+  # reg_command("deposit", "add a deposit")
+  # reg_command("edit", "update a record")
   
   # or as a list
   cmds <- list(
-    list("add", "add a value"),
-    list("delete", "delete a value"),
-    list("revise", "revise a value")
+    list("withdraw", "add a withdrawal"),
+    list("deposit", "add a deposit"),
+    list("edit", "update a record"),
+    list("find", "find a record")
   )
   reg_command_list(cmds)
 
   # and we can register subcommands one at a time or as a list.
-  reg_subcmd("add1", "add", "add subcmd 1")
-  reg_subcmd("add2", "add", "add subcmd 2")
-  reg_subcmd("add3", "add", "add subcmd 3")
+  reg_subcmd("cash", "withdraw", "add a cash withdrawal")
+  reg_subcmd("check", "withdraw", "add a check withdrawal")
 
   subcmds <- list(
-    list("del1", "delete", "delete subcommand 1"),
-    list("del2", "delete", "delete subcommand 2"),
-    list("add1", "revise", "revise subcmd 1")
+    list("paycheck", "deposit", "add a paycheck deposit"),
+    list("reimbursement", "deposit", "add a reimbursement"),
+    list("bankfee", "withdraw", "add a bank fee")
   )
   reg_subcmd_list(subcmds)
   
   writeLines ("Done!")
 
+  # usage() displays a formatted help message, usually in response to a '-?' argument
   writeLines ("\nRunning usage()...")
   usage()
   writeLines ("Done!")
 
   writeLines ("\nParsing command line...")
-  writeLines (paste("Command line:", paste(cmdline, collapse = ' '), '\n'))
+  writeLines (paste("Command line: MyCheckbook.R", paste(cmdline, collapse = ' ')))
   mydata <- parse_command_line(cmdline)
   writeLines ("Done!")
   
   writeLines ("\nAfter parse_command_line()...")
+  writeLines (paste("command:",mydata$command))
+  writeLines (paste("subcommand:",mydata$subcmd))
   writeLines (paste("plot:", mydata$plot))
   writeLines (paste("infile:", mydata$infile))
   writeLines (paste("outfile:",mydata$outfile))
   writeLines (paste("date:",mydata$date))
+  writeLines (paste("msg:",mydata$msg))
+  writeLines (paste("amount:",mydata$amount))
+  writeLines (paste("payee:",mydata$payee))
+  writeLines (paste("cknum:",mydata$cknum))
+  writeLines (paste("keywords:",mydata$keyword))
   writeLines (paste("unknowns:",mydata$unknowns))
+
+  writeLines ("\nLet's test the keywords argument...'")
+  cmdline <- c("find", "-k", "birthday", "-k", "Jane", "--amount=200")
+  
+  writeLines ("Parsing command line...")
+  writeLines (paste("Command line: MyCheckbook.R", paste(cmdline, collapse = ' ')))
+  mydata <- parse_command_line(cmdline)
+  writeLines ("Done!")
+
+  writeLines ("\nAfter parse_command_line()...")
   writeLines (paste("command:",mydata$command))
   writeLines (paste("subcommand:",mydata$subcmd))
-  writeLines (paste("noshort:",mydata$noshort))
-  writeLines (paste("keyword:",mydata$keyword))
-
+  writeLines (paste("plot:", mydata$plot))
+  writeLines (paste("infile:", mydata$infile))
+  writeLines (paste("outfile:",mydata$outfile))
+  writeLines (paste("date:",mydata$date))
+  writeLines (paste("msg:",mydata$msg))
+  writeLines (paste("amount:",mydata$amount))
+  writeLines (paste("payee:",mydata$payee))
+  writeLines (paste("cknum:",mydata$cknum))
+  writeLines (paste("keywords:",mydata$keyword))
+  writeLines (paste("unknowns:",mydata$unknowns))
+  
   writeLines ("\nParsing dates...")
-  writeLines (paste("Date:", mydata$date))
-  print (parse_date(mydata$date))
+  writeLines (paste("Date: 2019-12-31"))
+  print (parse_date("2019-12-31"))
   writeLines ("Date: 2019-12")
   print (parse_date("2019-12"))
   writeLines ("Date: 2019")

@@ -12,50 +12,50 @@ When registering arguments, you must indicate the type of value you expect to re
 If `argsType$TypeBool` is used, using the argument flips the default Boolean value. So for instance, if you call `reg_argument("--plot","-p","plot",FALSE,argsType$TypeBool,'plot output')`, the default value of `plot` will be `FALSE`. If `--plot` is included in the argument list it will be set to `TRUE`. Arguments of the form `--plot=TRUE` are also allowed.
 
 ```
-  init_command_line_parser('MyRprogram.R','My test program', '1.0.0')
+  init_command_line_parser('MyCheckbook.R','My checkbook program', '1.0.0')
 
   # we can register arguments one at a time, eg:  
   # an example TypeBool; default == FALSE; if used in cmdline, will be set to TRUE
-  reg_argument("--plot","-p","plot",FALSE,argsType$TypeBool,'plot output')
+  reg_argument("--plot",NA,"plot",FALSE,argsType$TypeBool,'plot output')
   # example TypeValue arguments. Use as '--lparam=val', '--lparam val', or '-l val'
-  reg_argument("--infile","-i","infile",NA,argsType$TypeValue,'select infile')
+  reg_argument("--infile","-i","infile",NA,argsType$TypeValue,'location of your checkbook file')
 
   # or we can register in a single call, as a list, eg:
-  params <- list(
+  arguments <- list(
     # example TypeValue arguments. Use as '--lparam=val', '--lparam val', or '-l val'
-    list("--outfile","-o","outfile",NA,argsType$TypeValue,'specify outfile'),
+    list("--outfile","-o","outfile",NA,argsType$TypeValue,'location of output file'),
     list("--date","-d","date",NA,argsType$TypeValue,'specify date'),
-    # an example lparam w/ no sparam
-    list("--noshort",NA,"noshort",FALSE,argsType$TypeBool, "no short form argument"),
+    list("--msg","-m","msg",NA,argsType$TypeValue,'memo line message'),
+    list("--amount","-a","amount",NA,argsType$TypeValue,'specify dollar amount'),
+    list("--payee","-p","payee",NA,argsType$TypeValue,'specify payee'),
+    list("--number","-n","cknum",NA,argsType$TypeValue,'specify check number'),
     # an example TypeMultiVal, where all supplied params are stored
-    list("--keyword","-k","keyword",NA,argsType$TypeMultiVal,'keywords'),
-    #  test to ensure --ver/-V not added if a conflicting param is already registered
-    list("--verify","-V","verify",FALSE,argsType$TypeBool,'verify something')
+    list("--keyword","-k","keyword",NA,argsType$TypeMultiVal,'keywords')
   )
-  reg_argument_list(params)
+  reg_argument_list(arguments)
   
   # we can register commands one at a time...
-  # reg_command("add", "add a value")
-  # reg_command("delete", "delete a value")
-  # reg_command("revise", "revise a value")
+  # reg_command("withdraw", "add a withdrawal")
+  # reg_command("deposit", "add a deposit")
+  # reg_command("edit", "update a record")
   
   # or as a list
   cmds <- list(
-    list("add", "add a value"),
-    list("delete", "delete a value"),
-    list("revise", "revise a value")
+    list("withdraw", "add a withdrawal"),
+    list("deposit", "add a deposit"),
+    list("edit", "update a record"),
+    list("find", "find a record")
   )
   reg_command_list(cmds)
 
   # and we can register subcommands one at a time or as a list.
-  reg_subcmd("add1", "add", "add subcmd 1")
-  reg_subcmd("add2", "add", "add subcmd 2")
-  reg_subcmd("add3", "add", "add subcmd 3")
+  reg_subcmd("cash", "withdraw", "add a cash withdrawal")
+  reg_subcmd("check", "withdraw", "add a check withdrawal")
 
   subcmds <- list(
-    list("del1", "delete", "delete subcommand 1"),
-    list("del2", "delete", "delete subcommand 2"),
-    list("add1", "revise", "revise subcmd 1")
+    list("paycheck", "deposit", "add a paycheck deposit"),
+    list("reimbursement", "deposit", "add a reimbursement"),
+    list("bankfee", "withdraw", "add a bank fee")
   )
   reg_subcmd_list(subcmds)
 ``` 
@@ -73,15 +73,18 @@ Parse the command line like so:
 
 ```
   writeLines ("\nAfter parse_command_line()...")
+  writeLines (paste("command:",mydata$command))
+  writeLines (paste("subcommand:",mydata$subcmd))
   writeLines (paste("plot:", mydata$plot))
   writeLines (paste("infile:", mydata$infile))
   writeLines (paste("outfile:",mydata$outfile))
   writeLines (paste("date:",mydata$date))
+  writeLines (paste("msg:",mydata$msg))
+  writeLines (paste("amount:",mydata$amount))
+  writeLines (paste("payee:",mydata$payee))
+  writeLines (paste("cknum:",mydata$cknum))
+  writeLines (paste("keywords:",mydata$keyword))
   writeLines (paste("unknowns:",mydata$unknowns))
-  writeLines (paste("command:",mydata$command))
-  writeLines (paste("subcommand:",mydata$subcmd))
-  writeLines (paste("noshort:",mydata$noshort))
-  writeLines (paste("keyword:",mydata$keyword))
 ```
 
 To use this tool:
@@ -91,7 +94,7 @@ To use this tool:
 3) Register arguments with `reg_argument()`. For instance, to allow the user to supply a filename on the command line, you might call `reg_argument("--outfile","-o","outfile",NA,argsType$TypeValue,'specify outfile')`. This registers a long parameter (`--outfile`), a short version (`-o`), a variable to hold the provided value (`outfile`), a default value (`NA`), the parameter type (`argsType$TypeValue`), and a description string. 
 - `sparam` is optional in `reg_argument()`. eg: `reg_argument("--print",NA,"print",FALSE,argsType$TypeBool,"print output")`
 - Arguments can also be supplied as a list of lists in a single call. For example, using `args <- list(list("--plot","-p","plot",FALSE,argsType$TypeBool,"plot output"), list("--outfile","-o","outfile",NA,argsType$TypeValue,'specify outfile'))` and `reg_argument_list(args)`.
-4) Register optional commands with `reg_command()`, and subcommands with `reg_subcmd()`. For instance, you might want to support an `add` command: `reg_command ("add", "Add a value")`, with two subcommands: `reg_subcommand ("name", "add", "Add a new name")` and `reg_subcommand ("phone", "add", "Add a new phone number")`. 
+4) Register optional commands with `reg_command()`, and subcommands with `reg_subcmd()`.  
 - Note that if a command is registered, one must be provided on the command line. The command is assumed to be the first argument; subcommands are assumed to be the second argument. eg, `MyRprogram.R add phone <params>`
 - Commands and subcommands can also be supplied as a list in a single call using `reg_commands_list()` and `reg_subcommand_list()`, respectively.
 5) Collect command line arguments on your script with `args <- commandArgs(trailingOnly = TRUE)`. 
