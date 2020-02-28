@@ -515,7 +515,7 @@ test_parser <- function() {
 
   # we can register arguments one at a time, eg:  
   # an example TypeBool; default == FALSE; if used in cmdline, will be set to TRUE
-  reg_argument("--plot",NA,"plot",FALSE,argsType$TypeBool,'plot output')
+  reg_argument("--rev-chronological",NA,"revchronological",FALSE,argsType$TypeBool,'Display newest entries first')
   # example TypeValue arguments. Use as '--lparam=val', '--lparam val', or '-l val'
   reg_argument("--infile","-i","infile",NA,argsType$TypeValue,'location of your checkbook file')
 
@@ -541,6 +541,7 @@ test_parser <- function() {
   # or as a list
   cmds <- list(
     list("withdraw", "add a withdrawal"),
+    list("plot", "graph output"),
     list("deposit", "add a deposit"),
     list("edit", "update a record"),
     list("find", "find a record")
@@ -573,7 +574,7 @@ test_parser <- function() {
   writeLines ("\nAfter parse_command_line()...")
   writeLines (paste("command:",mydata$command))
   writeLines (paste("subcommand:",mydata$subcmd))
-  writeLines (paste("plot:", mydata$plot))
+  writeLines (paste("revchronological:", mydata$revchronological))
   writeLines (paste("infile:", mydata$infile))
   writeLines (paste("outfile:",mydata$outfile))
   writeLines (paste("date:",mydata$date))
