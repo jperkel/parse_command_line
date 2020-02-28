@@ -5,7 +5,9 @@ Suppose you want to write a script for creating and maintaining a check book. Yo
 
 To use, call `init_command_line_parser()` to initialize the parsing tool. Then call `reg_argument()` (or `reg_argument_list()`) to register expected command line arguments, `reg_command()` or `reg_command_list()` to register expected commands, and `reg_subcmd()` or `reg_subcmd_list()` for subcommands. 
 
-For instance, to indicate a withdrawal of $100 in cash, you might call `MyCheckbook.R withdraw cash --amount=100 --msg='birthday gift'`. Here, `withdraw` is the command, `cash` is a subcommand and `--amount=100` and `msg='birthday gift'` are arguments. You might also add a `deposit` command, and a `check` subcommand, eg `MyCheckbook.R withdraw check --number 123 --amount=50 --payee='Electric Co.'` to log check #123 to the electric company in the amount of $50.)
+To indicate a withdrawal of $100 in cash, you might call `MyCheckbook.R withdraw cash --amount=100 --msg='birthday gift'`. Here, `withdraw` is the command, `cash` is a subcommand and `--amount=100` and `msg='birthday gift'` are arguments. You might also add a `deposit` command, and a `check` subcommand, eg `MyCheckbook.R withdraw check --number 123 --amount=50 --payee='Electric Co.'` to log check #123 to the electric company in the amount of $50.)
+
+Note that not all registered arguments must be provided on the command line. The default parameter passed to `reg_argument()` preloads the default. Thus, you could have a `--verbose` argument whose default value is FALSE. When `parse_command_line()` is called, the `verbose` variable will be set to FALSE, unless `--verbose` is included in the command line, in which case it will be TRUE.
 
 When registering arguments, you must indicate the type of value you expect to receive. Valid parameter types are `argsType$TypeBool` for Boolean values; `argsType$TypeValue` for arguments of type `--outfile=file`, `--outfile file`, and `-o file`; and `argsType$TypeMultiVal` for parameters where multiple values can be supplied, such as keywords: `-k key1 -k key2`. 
 
