@@ -339,6 +339,37 @@ parse_command_line <- function(args) {
     mydata[[name]] <- args_table$default[args_table$var == name]
   }
   
+  # look for a config.txt file in the directory that the running script is located. 
+  # if --config=filename given on cmdline, use that location instead.
+  full.args <- commandArgs(trailing = FALSE)
+  m <- full.args[which(grepl("^--file=", full.args) == TRUE)]
+  m <- strsplit(m, '=')[[1]][2]
+  m <- dirname(normalizePath(m))  
+  mydata$config <- file.path(m, "config.txt")
+
+  if (any(grepl('^--config=', args)) == TRUE) {
+    config_arg <- args[which(grepl('^--config=', args) == TRUE)]
+    mydata$config <- strsplit(config_arg, '=')[[1]][2]
+  }
+  
+  if (file.exists(mydata$config)) {
+    writeLines(paste0("Reading config file: ", mydata$config))
+    fileargs <- read_lines(mydata$config)
+    for (line in fileargs) {
+      # ignore blank lines, and lines that begin with #
+      if (line == "" || grepl('^#', line) == TRUE) next
+      spl <- strsplit(line, '=')[[1]]
+      # variable names must match the names given in reg_argument()
+      if (spl[[1]] %in% names(mydata)) {
+        mydata[[spl[1]]] <- spl[2]
+        debug_print(paste0(spl[1], ': ', mydata[spl[1]]))
+      }
+      else writeLines (paste0("Rejecting config.txt variable: ", spl[1]))
+    }
+  }
+  else writeLines(paste0("Warning: Config file not found: ", mydata$config))
+  
+  
   # process commands if any
   i <- 1
   if (nrow(cmds_table) > 0) {
