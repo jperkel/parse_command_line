@@ -356,6 +356,8 @@ parse_command_line <- function(args) {
     writeLines(paste0("Reading config file: ", mydata$config))
     fileargs <- read_lines(mydata$config)
     for (line in fileargs) {
+      # remove leading whitespace
+      line <- sub('^\\s+', '', line)
       # ignore blank lines, and lines that begin with #
       if (line == "" || grepl('^#', line) == TRUE) next
       spl <- strsplit(line, '=')[[1]]
@@ -650,4 +652,4 @@ test_parser <- function() {
 } # test_parser()
 
 # comment out for regular use
-test_parser()
+# test_parser()
