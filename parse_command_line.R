@@ -359,7 +359,7 @@ parse_command_line <- function(args) {
   m <- dirname(normalizePath(m))  
   mydata$config <- file.path(m, "config.txt")
 
-  if (any(grepl('^--config=', args)) == TRUE) {
+  if ((any(grepl('^--config=', args)) == TRUE) && (!'--config' %in% args_table$lparam)) {
     config_arg <- args[which(grepl('^--config=', args) == TRUE)]
     mydata$config <- strsplit(config_arg, '=')[[1]][2]
   }

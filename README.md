@@ -70,7 +70,7 @@ revchronological=TRUE
 
 Lines in `config.txt` that begin with a hashtag (`#`) are ignored, as is leading whitespace. The name of the variable to the left of the `=` sign must match the variable name (third parameter) passed to `reg_argument()`. You can override the variables in `config.txt` on the command line. So `MyCheckbook.R find --payee='Electric Co.' --revchronological=FALSE` will display results in chronological order.
 
-`parse_command_line.R` provides a `usage()` function to create a formatted help message based on the `desc` strings passed as the final arguments to `reg_argument()`, `reg_command()` and `reg_subcmd()`. If lparam `--help` and sparam `-?` are not otherwise used, it will automatically interpret those to generate a help message. If lparam `--ver` and sparam `-V` are not used, it will interpret those to output the script version information. 
+`parse_command_line.R` provides a `usage()` function to create a formatted help message based on the `desc` strings passed as the final arguments to `reg_argument()`, `reg_command()` and `reg_subcmd()`. If lparam `--help` and sparam `-?` are not otherwise used, it will automatically interpret those to generate a help message; if lparam `--ver` and sparam `-V` are not used, it will interpret those to output the script version information; and if lparam `--config` is not used, it will interpret that to be the location of a `config.txt` file.
 
 Parse the command line like so: 
 
