@@ -9,6 +9,7 @@
 ## 1.0.2 -- 28 Jul 2019 -- support parsing of commands
 ## 1.0.3 -- 26 Aug 2019 -- add subcommand support
 ## 1.0.4 -- 27 Feb 2020 -- args, cmds and subcmds can be supplied as lists
+## 1.0.5 -- 29 Feb 2020 -- support config.txt file
 ##########################
 suppressPackageStartupMessages({
   library(tidyverse)
