@@ -62,6 +62,13 @@ If `argsType$TypeBool` is used, using the argument flips the default Boolean val
   reg_subcmd_list(subcmds)
 ``` 
 
+Arguments that you call frequently can be included in a `config.txt` file, which by default is located in the same directory as the script that calls `parse_command_line()`. You can specify an alternative location with `--config=\path\to\config.txt`. For instance, if you always wanted to display your checkbook in reverse-chronological order, you could create a `config.txt` file that says:
+```
+revchronological=TRUE
+```
+
+Lines that begin with a hashtag (`#`) are ignored, as is leading whitespace. The name of the variable to the left of the `=` sign must match the variable name (third parameter) passed to `reg_argument()`.
+
 `parse_command_line.R` provides a `usage()` function to create a formatted help message based on the `desc` strings passed as the final arguments to `reg_argument()`, `reg_command()` and `reg_subcmd()`.
 
 Parse the command line like so: 
