@@ -69,6 +69,7 @@ usage <- function() {
   }
   writeLines('')
   
+  # add entries for --help, --ver & --config, if they don't already exist
   if (!'--help' %in% args_table$lparam && !'-?' %in% args_table$sparam) {
     my_df <- data.frame(lparam = '--help', sparam = '-?', var = NA, default = NA, 
                         argType = argsType$TypeBool, desc = 'Display help', stringsAsFactors = FALSE)
@@ -77,6 +78,16 @@ usage <- function() {
   if (!'--ver' %in% args_table$lparam && !'-V' %in% args_table$sparam && !is.na(ver)) {
     my_df <- data.frame(lparam = '--ver', sparam = '-V', var = NA, default = NA, 
                         argType = argsType$TypeBool, desc = 'Display version info', stringsAsFactors = FALSE)
+    args_table <- rbind(args_table, my_df)
+  }
+  if (!'--config' %in% args_table$lparam) {
+    full.args <- commandArgs(trailing = FALSE)
+    m <- full.args[which(grepl("^--file=", full.args) == TRUE)]
+    m <- strsplit(m, '=')[[1]][2]
+    m <- dirname(normalizePath(m))  
+    config <- file.path(m, "config.txt")
+    my_df <- data.frame(lparam = '--config', sparam = NA, var = NA, default = config, 
+                        argType = argsType$TypeValue, desc = 'Specify location of config.txt', stringsAsFactors = FALSE)
     args_table <- rbind(args_table, my_df)
   }
   
