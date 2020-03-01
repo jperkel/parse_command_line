@@ -652,4 +652,4 @@ test_parser <- function() {
 } # test_parser()
 
 # comment out for regular use
-# test_parser()
+test_parser()
