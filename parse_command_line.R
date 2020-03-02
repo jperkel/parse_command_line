@@ -54,18 +54,28 @@ argsType <- argsEnum()
 ## Create a help message; adds --help and --ver params if not provided.
 ##
 usage <- function() {
+  # number of spaces for each indentation level
+  lvl1_indent <- 2
+  lvl2_indent <- 6
+  lvl3_indent <- 10
+  lvl4_indent <- 14
+
+  buffer_str <- function(spacer) {
+    return (paste0(rep(' ', spacer), collapse = ''))
+  }
+  
   # remove first row of the tables, which is all NA
   args_table <- args_table[-1,]
   cmds_table <- cmds_table[-1,]
   subcmds_table <- subcmds_table[-1,]
   
-  writeLines(paste('\n', script, ': ', desc_str, sep = ''))
-  writeLines(paste('  USAGE: Rscript', script, 
-                   ifelse(nrow(cmds_table) > 0, '[COMMAND]', ''),
-                   ifelse(nrow(subcmds_table) > 0, '[SUBCOMMAND]', ''),
+  writeLines(paste0('\n', script, ': ', desc_str))
+  writeLines(paste0(buffer_str(lvl1_indent), 'USAGE: Rscript ', script, ' ',
+                   ifelse(nrow(cmds_table) > 0, '[COMMAND] ', ''),
+                   ifelse(nrow(subcmds_table) > 0, '[SUBCOMMAND] ', ''),
                    '<params>'))
   if (!is.na(ver)) {
-    writeLines(paste('\tVer:', ver))
+    writeLines(paste0(buffer_str(lvl2_indent), 'Ver: ', ver))
   }
   writeLines('')
   
@@ -83,7 +93,7 @@ usage <- function() {
   if (!'--config' %in% args_table$lparam) {
     my_df <- data.frame(lparam = '--config', sparam = NA, var = NA, 
                         default = paste0('~/', gsub('\\.', '_', script), "_config.txt"), 
-                        argType = argsType$TypeValue, desc = 'Specify location of config.txt', stringsAsFactors = FALSE)
+                        argType = argsType$TypeValue, desc = 'Specify location of config file', stringsAsFactors = FALSE)
     args_table <- rbind(args_table, my_df)
   }
   
@@ -93,35 +103,35 @@ usage <- function() {
   if (nrow(cmds_table) > 0) {
     cmds_table <- cmds_table[order(cmds_table$cmd),]
     
-    writeLines('  COMMANDS:')
+    writeLines(paste0(buffer_str(lvl1_indent), 'COMMANDS:'))
     for (r in 1:nrow(cmds_table)) {
       myrow <- cmds_table[r,]
-      writeLines(paste('\t',str_pad(myrow$cmd, max(nchar(myrow$cmd)), "right"), 
-                       ':', myrow$desc))
+      writeLines(paste0(buffer_str(lvl2_indent),str_pad(myrow$cmd, max(nchar(cmds_table$cmd)), "right"), 
+                       ' : ', myrow$desc))
       if (nrow(subcmds_table) > 0) {
         subtable <- subcmds_table[subcmds_table$parent == myrow$cmd, ]
         if (nrow(subtable) > 0) {
-          writeLines("\t\tSUBCOMMANDS:")
+          writeLines(paste0(buffer_str(lvl3_indent), "SUBCOMMANDS:"))
           subtable <- subtable[order(subtable$subcmd),]
-          writeLines(paste('\t\t',str_pad(subtable$subcmd, max(nchar(subtable$subcmd)), "right"), 
-                         ':', subtable$desc))
+          writeLines(paste0(buffer_str(lvl4_indent),str_pad(subtable$subcmd, max(nchar(subtable$subcmd)), "right"), 
+                         ' : ', subtable$desc))
         } # if (nrow(subtable) > 0)
       } # if (nrow(subcmds_table) > 0) 
     } # for
     writeLines('')
   } # if (nrow(cmds_table) > 0)
 
-  writeLines('  PARAMETERS:')
-  writeLines(paste0('\t',str_pad(args_table$lparam, max(nchar(args_table$lparam)), "right"),
-                    # need 5 spaces to account for missing sparam, eg ' (-m)'
-                   ifelse (!is.na(args_table$sparam), paste0(' (', args_table$sparam, ')'), 
-                           paste(rep(' ', 5), collapse = '')),
-                   ifelse (args_table$desc == '', '', ': '), 
-                   args_table$desc, 
-                   ifelse(is.na(args_table$default), '', 
-                          paste0('\n\t', paste(rep(' ', max(nchar(args_table$lparam)) + 10), collapse = ''), 
-                                'default: ', args_table$default))
-                   ))
+  writeLines(paste0(buffer_str(lvl1_indent), 'PARAMETERS:'))
+  writeLines(paste0(
+    buffer_str(lvl2_indent),str_pad(args_table$lparam, max(nchar(args_table$lparam)), "right"),
+    # need 5 spaces to account for sparam if none provided, eg ' (-m)'
+    ifelse (!is.na(args_table$sparam), paste0(' (', args_table$sparam, ')'), buffer_str(5)),
+    ifelse (args_table$desc == '', '', ': '),
+    args_table$desc, 
+    ifelse(is.na(args_table$default), '',
+           paste0('\n', buffer_str(lvl2_indent + max(nchar(args_table$lparam)) + 10),
+                  'default: ', args_table$default))
+    ))
 } # usage
 
 
