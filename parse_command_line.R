@@ -81,12 +81,8 @@ usage <- function() {
     args_table <- rbind(args_table, my_df)
   }
   if (!'--config' %in% args_table$lparam) {
-    full.args <- commandArgs(trailing = FALSE)
-    m <- full.args[which(grepl("^--file=", full.args) == TRUE)]
-    m <- strsplit(m, '=')[[1]][2]
-    m <- dirname(normalizePath(m))  
-    config <- file.path(m, "config.txt")
-    my_df <- data.frame(lparam = '--config', sparam = NA, var = NA, default = config, 
+    my_df <- data.frame(lparam = '--config', sparam = NA, var = NA, 
+                        default = paste0('~/', gsub('\\.', '_', script), "_config.txt"), 
                         argType = argsType$TypeValue, desc = 'Specify location of config.txt', stringsAsFactors = FALSE)
     args_table <- rbind(args_table, my_df)
   }
@@ -350,16 +346,11 @@ parse_command_line <- function(args) {
   for (name in names(mydata)) {
     mydata[[name]] <- args_table$default[args_table$var == name]
   }
-  
-  # look for a config.txt file in the directory that the running script is located. 
-  # if --config=filename given on cmdline, use that location instead.
-  full.args <- commandArgs(trailing = FALSE)
-  m <- full.args[which(grepl("^--file=", full.args) == TRUE)]
-  m <- strsplit(m, '=')[[1]][2]
-  m <- dirname(normalizePath(m))  
-  mydata$config <- file.path(m, "config.txt")
+  # If the user is not already using --config, look for config file in user's home directory 
+  if (is.null(mydata$config)) mydata$config <- paste0('~/', gsub('\\.', '_', script), "_config.txt")
 
-  if ((any(grepl('^--config=', args)) == TRUE) && (!'--config' %in% args_table$lparam)) {
+  # Override that location if --config is specified on the cmdline
+  if (any(grepl('^--config=', args)) == TRUE) {
     config_arg <- args[which(grepl('^--config=', args) == TRUE)]
     mydata$config <- strsplit(config_arg, '=')[[1]][2]
   }
