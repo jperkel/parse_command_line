@@ -11,9 +11,6 @@
 ## 1.0.4 -- 27 Feb 2020 -- args, cmds and subcmds can be supplied as lists
 ## 1.0.5 -- 29 Feb 2020 -- support config.txt file
 ##########################
-suppressPackageStartupMessages({
-  library(tidyverse)
-})
 
 # set debug to TRUE to see debug messages
 debug <- FALSE
@@ -665,4 +662,4 @@ test_parser <- function() {
 } # test_parser()
 
 # comment out for regular use
-test_parser()
+# test_parser()
