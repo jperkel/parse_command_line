@@ -76,24 +76,6 @@ usage <- function() {
   }
   writeLines('')
   
-  # # add entries for --help, --ver & --config, if they don't already exist
-  # if (!'--help' %in% args_table$lparam && !'-?' %in% args_table$sparam) {
-  #   my_df <- data.frame(lparam = '--help', sparam = '-?', var = NA, default = NA, 
-  #                       argType = argsType$TypeBool, desc = 'Display help', stringsAsFactors = FALSE)
-  #   args_table <- rbind(args_table, my_df)
-  # }
-  # if (!'--ver' %in% args_table$lparam && !'-V' %in% args_table$sparam && !is.na(ver)) {
-  #   my_df <- data.frame(lparam = '--ver', sparam = '-V', var = NA, default = NA, 
-  #                       argType = argsType$TypeBool, desc = 'Display version info', stringsAsFactors = FALSE)
-  #   args_table <- rbind(args_table, my_df)
-  # }
-  # if (!'--config' %in% args_table$lparam) {
-  #   my_df <- data.frame(lparam = '--config', sparam = NA, var = NA, 
-  #                       default = paste0('~/', gsub('\\.', '_', script), "_config.txt"), 
-  #                       argType = argsType$TypeValue, desc = 'Specify location of config file', stringsAsFactors = FALSE)
-  #   args_table <- rbind(args_table, my_df)
-  # }
-  
   # sort the tables alphabetically
   args_table <- args_table[order(args_table$lparam),]
   
@@ -336,52 +318,13 @@ parse_command_line <- function(args) {
     return (list(unknowns = args))
   }
 
-  # no sense doing anything if the user just wants help...
-  # if (args[1] %in% c("--help","-?") && (!'--help' %in% args_table$lparam && !'-?' %in% args_table$sparam)) {
-  #   usage() 
-  #   stop(call. = FALSE)
-  # }
-  # if (!is.na(ver) && args[1] %in% c("--ver", "-V") && 
-  #     (!'--ver' %in% args_table$lparam && !'-V' %in% args_table$sparam)) {
-  #   writeLines(paste(script, ': ', desc_str, '\n\tVer: ', ver, '\n', sep = ''))
-  #   stop(call. = FALSE)
-  # }
-  
   # create an empty list to store results, name each entry by its var name, & store defaults
   mydata <- vector("list", nrow(args_table))
   names(mydata) <- args_table$var
   for (name in names(mydata)) {
     mydata[[name]] <- args_table$default[args_table$var == name]
   }
-  # # If the user is not already using --config, look for config file in user's home directory 
-  # if (is.null(mydata$config)) mydata$config <- paste0('~/', gsub('\\.', '_', script), "_config.txt")
-  # 
-  # # Override that location if --config is specified on the cmdline
-  # if (any(grepl('^--config=', args)) == TRUE) {
-  #   config_arg <- args[which(grepl('^--config=', args) == TRUE)]
-  #   mydata$config <- strsplit(config_arg, '=')[[1]][2]
-  # }
-  # 
-  # if (file.exists(mydata$config)) {
-  #   writeLines(paste0("Reading config file: ", mydata$config))
-  #   fileargs <- read_lines(mydata$config)
-  #   for (line in fileargs) {
-  #     # remove leading whitespace
-  #     line <- sub('^\\s+', '', line)
-  #     # ignore blank lines, and lines that begin with #
-  #     if (line == "" || grepl('^#', line) == TRUE) next
-  #     spl <- strsplit(line, '=')[[1]]
-  #     # variable names must match the names given in reg_argument()
-  #     if (spl[[1]] %in% names(mydata)) {
-  #       mydata[[spl[1]]] <- spl[2]
-  #       debug_print(paste0(spl[1], ': ', mydata[spl[1]]))
-  #     }
-  #     else writeLines (paste0("Rejecting config.txt variable: ", spl[1]))
-  #   }
-  # }
-  # else writeLines(paste0("Warning: Config file not found: ", mydata$config))
-  
-  
+
   # process commands if any
   i <- 1
   if (nrow(cmds_table) > 0) {
