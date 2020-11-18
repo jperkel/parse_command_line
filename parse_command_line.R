@@ -12,16 +12,18 @@
 ## 1.0.5 -- 29 Feb 2020 -- support config.txt file
 ##########################
 
+library(stringr)
+
 # set debug to TRUE to see debug messages
-debug <- FALSE
-
-
-debug_print <- function (s) {
-   if (debug == TRUE) {
-     if (is.character (s)) writeLines (s)
-     else print (s)
-   }
-}
+# debug <- FALSE
+# 
+# 
+# debug_print <- function (s) {
+#    if (debug == TRUE) {
+#      if (is.character (s)) writeLines (s)
+#      else print (s)
+#    }
+# }
 
 
 # tables to hold the possible command line params
@@ -42,7 +44,7 @@ ver <- NA # version number, eg "1.0.0"
 # TypeMultiVal == TypeValue, but allowing multiple values to be stored (ie, keywords)
 #
 argsEnum <- function() {
-  list (TypeBool = 1, TypeValue = 2, TypeMultiVal = 3) 
+  list (TypeBool = 1, TypeValue = 2, TypeMultiVal = 3, TypeMetered = 4) 
 }
 argsType <- argsEnum()
 
@@ -277,7 +279,7 @@ reg_argument_list <- function(plist) {
                         argType = p[[5]], desc = p[[6]], stringsAsFactors = FALSE)
     args_table <<- rbind(args_table, my_df) 
   }
-  debug_print(args_table)
+#  debug_print(args_table)
   if (any(duplicated(args_table$lparam[!is.na(args_table$lparam)]))) { 
     tmp <- args_table$lparam[!is.na(args_table$lparam)]
     stop(paste0("reg_argument_list(): duplicated lparam: ", 
@@ -301,15 +303,15 @@ parse_command_line <- function(args) {
   cmds_table <- cmds_table[-1,]
   subcmds_table <- subcmds_table[-1,]
 
-  debug_print ("Args table:")
-  debug_print (args_table)
-  debug_print ("\n")
-  debug_print ("Commands table:")
-  debug_print (cmds_table)
-  debug_print ("\n")
-  debug_print ("Subcommands table:")
-  debug_print (subcmds_table)
-  debug_print ("\n")
+  # debug_print ("Args table:")
+  # debug_print (args_table)
+  # debug_print ("\n")
+  # debug_print ("Commands table:")
+  # debug_print (cmds_table)
+  # debug_print ("\n")
+  # debug_print ("Subcommands table:")
+  # debug_print (subcmds_table)
+  # debug_print ("\n")
 
   # if neither reg_arguments() nor reg_command() has been called, there's no table to process; 
   # return the args as a list under the name 'unknowns'
@@ -328,10 +330,10 @@ parse_command_line <- function(args) {
   # process commands if any
   i <- 1
   if (nrow(cmds_table) > 0) {
-    debug_print ("Parsing commands...")
+    # debug_print ("Parsing commands...")
     if (args[i] %in% cmds_table$cmd) { 
       mydata[["command"]] <- args[i]
-      debug_print (paste("Command matched:", args[i]))
+      # debug_print (paste("Command matched:", args[i]))
 
       # filter subcmds_table to include only entries where parent == command
       subcmds_table <- subcmds_table[subcmds_table$parent == mydata$command,]
@@ -344,14 +346,14 @@ parse_command_line <- function(args) {
   
   # process subcommands if any
   if (nrow(subcmds_table) > 0) {
-    debug_print ("Parsing subcommands...")
+    # debug_print ("Parsing subcommands...")
     if (args[i] %in% c("--help", "-?")) {
       usage() # TO-DO: ALLOW SPECIFIC HELP FOR SUBCOMMANDS
       stop(call. = FALSE)
     } # if (args[i] %in% c("--help", "-?"))
     else if (args[i] %in% subcmds_table$subcmd) {
       mydata[["subcmd"]] <- args[i]
-      debug_print (paste("Subcommand matched:", args[i]))
+      # debug_print (paste("Subcommand matched:", args[i]))
     } # if (args[i] %in% subcmds_table$subcmd)
     else {
       stop (paste0("parse_command_line(): \'", args[i], "\' is not a subcommand of parent \'", 
@@ -361,13 +363,13 @@ parse_command_line <- function(args) {
   } # if (nrow(subcmds_table) > 0)
   
   # process arguments
-  debug_print ("Processing arguments...")
+  # debug_print ("Processing arguments...")
   unk <- 0 # number of unknown params found
   while (i <= length(args)) {
     p = args[i]
     myrow <- NULL
     
-    debug_print (paste("Processing argument:",p))
+    # debug_print (paste("Processing argument:",p))
     if (p %in% args_table$lparam[!is.na(args_table$lparam)]) {
       temp <- args_table[!is.na(args_table$lparam),]
       myrow <- temp[temp$lparam == p,]
@@ -391,7 +393,7 @@ parse_command_line <- function(args) {
       writeLines (paste("Warning: parse_command_line(): unknown param:", p))
     }
     
-    debug_print (myrow)
+    # debug_print (myrow)
     if (!is.null(myrow)) {
       if(myrow$argType == argsType$TypeBool) { # if the param is a logical type, save the opposite logical type
         if ((p == myrow$sparam && !is.na(myrow$sparam)) || (p == myrow$lparam && !is.na(myrow$lparam))) {
@@ -408,6 +410,14 @@ parse_command_line <- function(args) {
           else mydata[[myrow$var]] <- val
         }
       }
+      
+      # TypeMetered -- each time the param is used, a value is incremented
+      else if (myrow$argType == argsType$TypeMetered) {
+        if ((p == myrow$sparam && !is.na(myrow$sparam)) || (p == myrow$lparam && !is.na(myrow$lparam))) {
+          mydata[[myrow$var]] <- mydata[[myrow$var]] + 1
+        }
+      }
+      
       # TypeValue; store either what is after the '=', or the next param in the arg string
       # sparam <value> || lparam <value>
       else if ((p == myrow$sparam && !is.na(myrow$sparam)) || (p == myrow$lparam && !is.na(myrow$lparam))) { 
@@ -490,7 +500,7 @@ parse_date <- function(d) {
 
 test_parser <- function() {
   # parser needs to be initialized. Let's see what it returns if not
-  cmdline <- c("withdraw", "cash", "--amount=100", "--msg='birthday gift'", "foo")
+  cmdline <- c("withdraw", "cash", "-v", "--amount=100", "--msg='birthday gift'", "foo", "--verbose", "-v")
   
   writeLines ("What if the parser isn't initialized?")
   mydata <- parse_command_line(cmdline)
@@ -515,7 +525,9 @@ test_parser <- function() {
     list("--payee","-p","payee",NA,argsType$TypeValue,'specify payee'),
     list("--number","-n","cknum",NA,argsType$TypeValue,'specify check number'),
     # an example TypeMultiVal, where all supplied params are stored
-    list("--keyword","-k","keyword",NA,argsType$TypeMultiVal,'keywords')
+    list("--keyword","-k","keyword",NA,argsType$TypeMultiVal,'keywords'),
+    # an example TypeMetered, where each use of the param increments a variable
+    list("--verbose","-v","verbose",0,argsType$TypeMetered,'verbose level')
   )
   reg_argument_list(arguments)
   
@@ -570,6 +582,7 @@ test_parser <- function() {
   writeLines (paste("cknum:",mydata$cknum))
   writeLines (paste("keywords:",mydata$keyword))
   writeLines (paste("unknowns:",mydata$unknowns))
+  writeLines (paste("verbose level:", mydata$verbose))
 
   writeLines ("\nLet's test the keywords argument...'")
   cmdline <- c("find", "-k", "birthday", "-k", "Jane", "--amount=200")
@@ -605,4 +618,4 @@ test_parser <- function() {
 } # test_parser()
 
 # comment out for regular use
-# test_parser()
+test_parser()
