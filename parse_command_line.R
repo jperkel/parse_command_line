@@ -343,18 +343,16 @@ parse_command_line <- function(args) {
   while (i <= length(args)) {
     p = args[i]
     myrow <- NULL
+    index <- NULL
     
     if (p %in% args_table$lparam[!is.na(args_table$lparam)]) {
-      temp <- args_table[!is.na(args_table$lparam),]
-      myrow <- temp[temp$lparam == p,]
+      index <- which(args_table$lparam == p)
     }
     else if (p %in% args_table$sparam[!is.na(args_table$sparam)]) {
-      temp <- args_table[!is.na(args_table$sparam),]
-      myrow <- temp[temp$sparam == p,]
+      index <- which(args_table$sparam == p)
     }
     else if (strsplit(p, "=")[[1]][1] %in% args_table$lparam[!is.na(args_table$lparam)]) {
-      temp <- args_table[!is.na(args_table$lparam),]
-      myrow <- temp[temp$lparam == strsplit(p, "=")[[1]][1],]
+      index <- which(args_table$lparam == strsplit(p, "=")[[1]][1])
     }
     else if (p %in% c("--help", "-?")) {
       usage() # TO-DO: usage(mydata$command)
@@ -366,8 +364,9 @@ parse_command_line <- function(args) {
       mydata[["unknowns"]][unk] <- p
       writeLines (paste("Warning: parse_command_line(): unknown param:", p))
     }
-    
-    if (!is.null(myrow)) {
+
+    if (!is.null(index)) {
+      myrow <- args_table[index,]
       if(myrow$argType == argsType$TypeBool) { # if the param is a logical type, save the opposite logical type
         if ((p == myrow$sparam && !is.na(myrow$sparam)) || (p == myrow$lparam && !is.na(myrow$lparam))) {
           # if the argument exactly matches lparam or sparam
