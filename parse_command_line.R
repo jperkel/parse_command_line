@@ -11,21 +11,8 @@
 ## 1.0.4 -- 27 Feb 2020 -- args, cmds and subcmds can be supplied as lists
 ## 1.0.5 -- 29 Feb 2020 -- support config.txt file
 ##########################
-suppressPackageStartupMessages({
-  library(tidyverse)
-})
 
-# set debug to TRUE to see debug messages
-debug <- FALSE
-
-
-debug_print <- function (s) {
-   if (debug == TRUE) {
-     if (is.character (s)) writeLines (s)
-     else print (s)
-   }
-}
-
+library(stringr)
 
 # tables to hold the possible command line params
 args_table <- data.frame(lparam = NA, sparam = NA, var = NA, default = NA, argType = NA, 
@@ -43,9 +30,10 @@ ver <- NA # version number, eg "1.0.0"
 # TypeBool == TRUE/FALSE
 # TypeValue == any value expressed as "--arg=Value", "--arg Value", or "-a Value"
 # TypeMultiVal == TypeValue, but allowing multiple values to be stored (ie, keywords)
-#
+# TypeMetered == value increments each time the param is used. eg, -v -v yields 2
+# 
 argsEnum <- function() {
-  list (TypeBool = 1, TypeValue = 2, TypeMultiVal = 3) 
+  list (TypeBool = 1, TypeValue = 2, TypeMultiVal = 3, TypeMetered = 4) 
 }
 argsType <- argsEnum()
 
@@ -54,31 +42,30 @@ argsType <- argsEnum()
 ## Create a help message; adds --help and --ver params if not provided.
 ##
 usage <- function() {
+  # number of spaces for each indentation level
+  lvl1_indent <- 2
+  lvl2_indent <- 6
+  lvl3_indent <- 10
+  lvl4_indent <- 14
+
+  buffer_str <- function(spacer) {
+    return (paste0(rep(' ', spacer), collapse = ''))
+  }
+  
   # remove first row of the tables, which is all NA
   args_table <- args_table[-1,]
   cmds_table <- cmds_table[-1,]
   subcmds_table <- subcmds_table[-1,]
   
-  writeLines(paste('\n', script, ': ', desc_str, sep = ''))
-  writeLines(paste('  USAGE: Rscript', script, 
-                   ifelse(nrow(cmds_table) > 0, '[COMMAND]', ''),
-                   ifelse(nrow(subcmds_table) > 0, '[SUBCOMMAND]', ''),
+  writeLines(paste0('\n', script, ': ', desc_str))
+  writeLines(paste0(buffer_str(lvl1_indent), 'USAGE: Rscript ', script, ' ',
+                   ifelse(nrow(cmds_table) > 0, '[COMMAND] ', ''),
+                   ifelse(nrow(subcmds_table) > 0, '[SUBCOMMAND] ', ''),
                    '<params>'))
   if (!is.na(ver)) {
-    writeLines(paste('\tVer:', ver))
+    writeLines(paste0(buffer_str(lvl2_indent), 'Ver: ', ver))
   }
   writeLines('')
-  
-  if (!'--help' %in% args_table$lparam && !'-?' %in% args_table$sparam) {
-    my_df <- data.frame(lparam = '--help', sparam = '-?', var = NA, default = NA, 
-                        argType = argsType$TypeBool, desc = 'Display help', stringsAsFactors = FALSE)
-    args_table <- rbind(args_table, my_df)
-  }
-  if (!'--ver' %in% args_table$lparam && !'-V' %in% args_table$sparam && !is.na(ver)) {
-    my_df <- data.frame(lparam = '--ver', sparam = '-V', var = NA, default = NA, 
-                        argType = argsType$TypeBool, desc = 'Display version info', stringsAsFactors = FALSE)
-    args_table <- rbind(args_table, my_df)
-  }
   
   # sort the tables alphabetically
   args_table <- args_table[order(args_table$lparam),]
@@ -86,35 +73,36 @@ usage <- function() {
   if (nrow(cmds_table) > 0) {
     cmds_table <- cmds_table[order(cmds_table$cmd),]
     
-    writeLines('  COMMANDS:')
+    writeLines(paste0(buffer_str(lvl1_indent), 'COMMANDS:'))
     for (r in 1:nrow(cmds_table)) {
       myrow <- cmds_table[r,]
-      writeLines(paste('\t',str_pad(myrow$cmd, max(nchar(myrow$cmd)), "right"), 
-                       ':', myrow$desc))
+      writeLines(paste0(buffer_str(lvl2_indent),str_pad(myrow$cmd, max(nchar(cmds_table$cmd)), "right"), 
+                       ' : ', myrow$desc))
       if (nrow(subcmds_table) > 0) {
         subtable <- subcmds_table[subcmds_table$parent == myrow$cmd, ]
         if (nrow(subtable) > 0) {
-          writeLines("\t\tSUBCOMMANDS:")
+          writeLines(paste0(buffer_str(lvl3_indent), "SUBCOMMANDS:"))
           subtable <- subtable[order(subtable$subcmd),]
-          writeLines(paste('\t\t',str_pad(subtable$subcmd, max(nchar(subtable$subcmd)), "right"), 
-                         ':', subtable$desc))
+          writeLines(paste0(buffer_str(lvl4_indent),str_pad(subtable$subcmd, max(nchar(subtable$subcmd)), "right"), 
+                         ' : ', subtable$desc))
         } # if (nrow(subtable) > 0)
       } # if (nrow(subcmds_table) > 0) 
     } # for
     writeLines('')
   } # if (nrow(cmds_table) > 0)
 
-  writeLines('  PARAMETERS:')
-  writeLines(paste0('\t',str_pad(args_table$lparam, max(nchar(args_table$lparam)), "right"),
-                    # need 5 spaces to account for missing sparam, eg ' (-m)'
-                   ifelse (!is.na(args_table$sparam), paste0(' (', args_table$sparam, ')'), 
-                           paste(rep(' ', 5), collapse = '')),
-                   ifelse (args_table$desc == '', '', ': '), 
-                   args_table$desc, 
-                   ifelse(is.na(args_table$default), '', 
-                          paste0('\n\t', paste(rep(' ', max(nchar(args_table$lparam)) + 10), collapse = ''), 
-                                'default: ', args_table$default))
-                   ))
+  writeLines(paste0(buffer_str(lvl1_indent), 'PARAMETERS:'))
+  writeLines(paste0(
+    buffer_str(lvl2_indent),str_pad(args_table$lparam, max(nchar(args_table$lparam)), "right"),
+    # need 5 spaces to account for sparam if none provided, eg ' (-m)'
+    ifelse (!is.na(args_table$sparam), paste0(' (', args_table$sparam, ')'), buffer_str(5)),
+    ifelse (args_table$desc == '', '', ': '),
+    args_table$desc, 
+    ifelse(is.na(args_table$default), '',
+           paste0('\n', buffer_str(lvl2_indent + max(nchar(args_table$lparam)) + 10),
+                  'default: ', 
+                    ifelse (args_table$argType == argsType$TypeBool, as.logical(args_table$default), args_table$default))
+    )))
 } # usage
 
 
@@ -281,7 +269,7 @@ reg_argument_list <- function(plist) {
                         argType = p[[5]], desc = p[[6]], stringsAsFactors = FALSE)
     args_table <<- rbind(args_table, my_df) 
   }
-  debug_print(args_table)
+
   if (any(duplicated(args_table$lparam[!is.na(args_table$lparam)]))) { 
     tmp <- args_table$lparam[!is.na(args_table$lparam)]
     stop(paste0("reg_argument_list(): duplicated lparam: ", 
@@ -305,16 +293,6 @@ parse_command_line <- function(args) {
   cmds_table <- cmds_table[-1,]
   subcmds_table <- subcmds_table[-1,]
 
-  debug_print ("Args table:")
-  debug_print (args_table)
-  debug_print ("\n")
-  debug_print ("Commands table:")
-  debug_print (cmds_table)
-  debug_print ("\n")
-  debug_print ("Subcommands table:")
-  debug_print (subcmds_table)
-  debug_print ("\n")
-
   # if neither reg_arguments() nor reg_command() has been called, there's no table to process; 
   # return the args as a list under the name 'unknowns'
   if (nrow(args_table) == 0 && nrow(cmds_table) == 0) {
@@ -322,64 +300,18 @@ parse_command_line <- function(args) {
     return (list(unknowns = args))
   }
 
-  # no sense doing anything if the user just wants help...
-  if (args[1] %in% c("--help","-?") && (!'--help' %in% args_table$lparam && !'-?' %in% args_table$sparam)) {
-    usage() 
-    stop(call. = FALSE)
-  }
-  if (!is.na(ver) && args[1] %in% c("--ver", "-V") && 
-      (!'--ver' %in% args_table$lparam && !'-V' %in% args_table$sparam)) {
-    writeLines(paste(script, ': ', desc_str, '\n\tVer: ', ver, '\n', sep = ''))
-    stop(call. = FALSE)
-  }
-  
   # create an empty list to store results, name each entry by its var name, & store defaults
   mydata <- vector("list", nrow(args_table))
   names(mydata) <- args_table$var
   for (name in names(mydata)) {
     mydata[[name]] <- args_table$default[args_table$var == name]
   }
-  
-  # look for a config.txt file in the directory that the running script is located. 
-  # if --config=filename given on cmdline, use that location instead.
-  full.args <- commandArgs(trailing = FALSE)
-  m <- full.args[which(grepl("^--file=", full.args) == TRUE)]
-  m <- strsplit(m, '=')[[1]][2]
-  m <- dirname(normalizePath(m))  
-  mydata$config <- file.path(m, "config.txt")
 
-  if (any(grepl('^--config=', args)) == TRUE) {
-    config_arg <- args[which(grepl('^--config=', args) == TRUE)]
-    mydata$config <- strsplit(config_arg, '=')[[1]][2]
-  }
-  
-  if (file.exists(mydata$config)) {
-    writeLines(paste0("Reading config file: ", mydata$config))
-    fileargs <- read_lines(mydata$config)
-    for (line in fileargs) {
-      # remove leading whitespace
-      line <- sub('^\\s+', '', line)
-      # ignore blank lines, and lines that begin with #
-      if (line == "" || grepl('^#', line) == TRUE) next
-      spl <- strsplit(line, '=')[[1]]
-      # variable names must match the names given in reg_argument()
-      if (spl[[1]] %in% names(mydata)) {
-        mydata[[spl[1]]] <- spl[2]
-        debug_print(paste0(spl[1], ': ', mydata[spl[1]]))
-      }
-      else writeLines (paste0("Rejecting config.txt variable: ", spl[1]))
-    }
-  }
-  else writeLines(paste0("Warning: Config file not found: ", mydata$config))
-  
-  
   # process commands if any
   i <- 1
   if (nrow(cmds_table) > 0) {
-    debug_print ("Parsing commands...")
     if (args[i] %in% cmds_table$cmd) { 
       mydata[["command"]] <- args[i]
-      debug_print (paste("Command matched:", args[i]))
 
       # filter subcmds_table to include only entries where parent == command
       subcmds_table <- subcmds_table[subcmds_table$parent == mydata$command,]
@@ -392,14 +324,12 @@ parse_command_line <- function(args) {
   
   # process subcommands if any
   if (nrow(subcmds_table) > 0) {
-    debug_print ("Parsing subcommands...")
     if (args[i] %in% c("--help", "-?")) {
       usage() # TO-DO: ALLOW SPECIFIC HELP FOR SUBCOMMANDS
       stop(call. = FALSE)
     } # if (args[i] %in% c("--help", "-?"))
     else if (args[i] %in% subcmds_table$subcmd) {
       mydata[["subcmd"]] <- args[i]
-      debug_print (paste("Subcommand matched:", args[i]))
     } # if (args[i] %in% subcmds_table$subcmd)
     else {
       stop (paste0("parse_command_line(): \'", args[i], "\' is not a subcommand of parent \'", 
@@ -409,24 +339,20 @@ parse_command_line <- function(args) {
   } # if (nrow(subcmds_table) > 0)
   
   # process arguments
-  debug_print ("Processing arguments...")
   unk <- 0 # number of unknown params found
   while (i <= length(args)) {
     p = args[i]
     myrow <- NULL
+    index <- NULL
     
-    debug_print (paste("Processing argument:",p))
     if (p %in% args_table$lparam[!is.na(args_table$lparam)]) {
-      temp <- args_table[!is.na(args_table$lparam),]
-      myrow <- temp[temp$lparam == p,]
+      index <- which(args_table$lparam == p)
     }
     else if (p %in% args_table$sparam[!is.na(args_table$sparam)]) {
-      temp <- args_table[!is.na(args_table$sparam),]
-      myrow <- temp[temp$sparam == p,]
+      index <- which(args_table$sparam == p)
     }
     else if (strsplit(p, "=")[[1]][1] %in% args_table$lparam[!is.na(args_table$lparam)]) {
-      temp <- args_table[!is.na(args_table$lparam),]
-      myrow <- temp[temp$lparam == strsplit(p, "=")[[1]][1],]
+      index <- which(args_table$lparam == strsplit(p, "=")[[1]][1])
     }
     else if (p %in% c("--help", "-?")) {
       usage() # TO-DO: usage(mydata$command)
@@ -438,9 +364,9 @@ parse_command_line <- function(args) {
       mydata[["unknowns"]][unk] <- p
       writeLines (paste("Warning: parse_command_line(): unknown param:", p))
     }
-    
-    debug_print (myrow)
-    if (!is.null(myrow)) {
+
+    if (!is.null(index)) {
+      myrow <- args_table[index,]
       if(myrow$argType == argsType$TypeBool) { # if the param is a logical type, save the opposite logical type
         if ((p == myrow$sparam && !is.na(myrow$sparam)) || (p == myrow$lparam && !is.na(myrow$lparam))) {
           # if the argument exactly matches lparam or sparam
@@ -456,6 +382,14 @@ parse_command_line <- function(args) {
           else mydata[[myrow$var]] <- val
         }
       }
+      
+      # TypeMetered -- each time the param is used, a value is incremented
+      else if (myrow$argType == argsType$TypeMetered) {
+        if ((p == myrow$sparam && !is.na(myrow$sparam)) || (p == myrow$lparam && !is.na(myrow$lparam))) {
+          mydata[[myrow$var]] <- as.integer(mydata[[myrow$var]]) + 1
+        }
+      }
+      
       # TypeValue; store either what is after the '=', or the next param in the arg string
       # sparam <value> || lparam <value>
       else if ((p == myrow$sparam && !is.na(myrow$sparam)) || (p == myrow$lparam && !is.na(myrow$lparam))) { 
@@ -534,123 +468,3 @@ parse_date <- function(d) {
   }
   return(c(year, month, day))
 } # parse_date
-
-
-test_parser <- function() {
-  # parser needs to be initialized. Let's see what it returns if not
-  cmdline <- c("withdraw", "cash", "--amount=100", "--msg='birthday gift'", "foo")
-  
-  writeLines ("What if the parser isn't initialized?")
-  mydata <- parse_command_line(cmdline)
-  print (mydata)
-  
-  writeLines ("\nLet's initialize it...")
-  init_command_line_parser('MyCheckbook.R','My checkbook program', '1.0.0')
-
-  # we can register arguments one at a time, eg:  
-  # an example TypeBool; default == FALSE; if used in cmdline, will be set to TRUE
-  reg_argument("--rev-chronological",NA,"revchronological",FALSE,argsType$TypeBool,'Display newest entries first')
-  # example TypeValue arguments. Use as '--lparam=val', '--lparam val', or '-l val'
-  reg_argument("--infile","-i","infile",NA,argsType$TypeValue,'location of your checkbook file')
-
-  # or we can register in a single call, as a list, eg:
-  arguments <- list(
-    # example TypeValue arguments. Use as '--lparam=val', '--lparam val', or '-l val'
-    list("--outfile","-o","outfile",NA,argsType$TypeValue,'location of output file'),
-    list("--date","-d","date",NA,argsType$TypeValue,'specify date'),
-    list("--msg","-m","msg",NA,argsType$TypeValue,'memo line message'),
-    list("--amount","-a","amount",NA,argsType$TypeValue,'specify dollar amount'),
-    list("--payee","-p","payee",NA,argsType$TypeValue,'specify payee'),
-    list("--number","-n","cknum",NA,argsType$TypeValue,'specify check number'),
-    # an example TypeMultiVal, where all supplied params are stored
-    list("--keyword","-k","keyword",NA,argsType$TypeMultiVal,'keywords')
-  )
-  reg_argument_list(arguments)
-  
-  # we can register commands one at a time...
-  # reg_command("withdraw", "add a withdrawal")
-  # reg_command("deposit", "add a deposit")
-  # reg_command("edit", "update a record")
-  
-  # or as a list
-  cmds <- list(
-    list("withdraw", "add a withdrawal"),
-    list("plot", "graph output"),
-    list("deposit", "add a deposit"),
-    list("edit", "update a record"),
-    list("find", "find a record")
-  )
-  reg_command_list(cmds)
-
-  # and we can register subcommands one at a time or as a list.
-  reg_subcmd("cash", "withdraw", "add a cash withdrawal")
-  reg_subcmd("check", "withdraw", "add a check withdrawal")
-
-  subcmds <- list(
-    list("paycheck", "deposit", "add a paycheck deposit"),
-    list("reimbursement", "deposit", "add a reimbursement"),
-    list("bankfee", "withdraw", "add a bank fee")
-  )
-  reg_subcmd_list(subcmds)
-  
-  writeLines ("Done!")
-
-  # usage() displays a formatted help message, usually in response to a '-?' argument
-  writeLines ("\nRunning usage()...")
-  usage()
-  writeLines ("Done!")
-
-  writeLines ("\nParsing command line...")
-  writeLines (paste("Command line: MyCheckbook.R", paste(cmdline, collapse = ' ')))
-  mydata <- parse_command_line(cmdline)
-  writeLines ("Done!")
-  
-  writeLines ("\nAfter parse_command_line()...")
-  writeLines (paste("command:",mydata$command))
-  writeLines (paste("subcommand:",mydata$subcmd))
-  writeLines (paste("revchronological:", mydata$revchronological))
-  writeLines (paste("infile:", mydata$infile))
-  writeLines (paste("outfile:",mydata$outfile))
-  writeLines (paste("date:",mydata$date))
-  writeLines (paste("msg:",mydata$msg))
-  writeLines (paste("amount:",mydata$amount))
-  writeLines (paste("payee:",mydata$payee))
-  writeLines (paste("cknum:",mydata$cknum))
-  writeLines (paste("keywords:",mydata$keyword))
-  writeLines (paste("unknowns:",mydata$unknowns))
-
-  writeLines ("\nLet's test the keywords argument...'")
-  cmdline <- c("find", "-k", "birthday", "-k", "Jane", "--amount=200")
-  
-  writeLines ("Parsing command line...")
-  writeLines (paste("Command line: MyCheckbook.R", paste(cmdline, collapse = ' ')))
-  mydata <- parse_command_line(cmdline)
-  writeLines ("Done!")
-
-  writeLines ("\nAfter parse_command_line()...")
-  writeLines (paste("command:",mydata$command))
-  writeLines (paste("subcommand:",mydata$subcmd))
-  writeLines (paste("plot:", mydata$plot))
-  writeLines (paste("infile:", mydata$infile))
-  writeLines (paste("outfile:",mydata$outfile))
-  writeLines (paste("date:",mydata$date))
-  writeLines (paste("msg:",mydata$msg))
-  writeLines (paste("amount:",mydata$amount))
-  writeLines (paste("payee:",mydata$payee))
-  writeLines (paste("cknum:",mydata$cknum))
-  writeLines (paste("keywords:",mydata$keyword))
-  writeLines (paste("unknowns:",mydata$unknowns))
-  
-  writeLines ("\nParsing dates...")
-  writeLines (paste("Date: 2019-12-31"))
-  print (parse_date("2019-12-31"))
-  writeLines ("Date: 2019-12")
-  print (parse_date("2019-12"))
-  writeLines ("Date: 2019")
-  print (parse_date("2019"))
-  writeLines ("Date: 2019-13-31")
-  print (parse_date("2019-13-31")) # bad date!
-} # test_parser()
-
-# comment out for regular use
-# test_parser()
