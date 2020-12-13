@@ -149,19 +149,10 @@ reg_command <- function(cmd, desc = '') {
 ## reg_command_list (cmds)
 ##
 reg_command_list <- function(clist) {
-  if (is.na(desc_str)) {
-    stop("Error: reg_command(): Command line parser not initialized.", call. = FALSE)
-  }
-  
   ids <- c("cmd","desc")
   for (c in clist) {
     stopifnot(length(c) == length(ids))
-    my_df <- data.frame(cmd = c[[1]], desc = c[[2]], stringsAsFactors = FALSE)
-    cmds_table <<- rbind(cmds_table, my_df) 
-  }
-  if (any(duplicated(cmds_table$cmd))) {
-    stop(paste0("Error: reg_command_list(): duplicated command: ", 
-                cmds_table$cmd[duplicated(cmds_table$cmd)]), call. = FALSE)
+    reg_command(cmd = c[[1]], desc = c[[2]])
   }
 } # reg_command_list
 
@@ -202,20 +193,10 @@ reg_subcmd <- function(subcmd = subcmd, parent = parent, desc = '') {
 ## reg_subcmd_list (subcmds)
 ##
 reg_subcmd_list <- function(slist) {
-  if (is.na(desc_str)) {
-    stop("Error: reg_subcmd_list(): Command line parser not initialized.", call. = FALSE)
-  }
-  
   ids <- c("subcmd","parent","desc")
   for (s in slist) {
     stopifnot(length(s) == length(ids))
-    my_df <- data.frame(subcmd = s[[1]], parent = s[[2]], desc = s[[3]], stringsAsFactors = FALSE)
-
-    subtable <- subcmds_table[subcmds_table$parent == my_df$parent,]
-    if (my_df$subcmd %in% subtable$subcmd) {
-      stop(paste0("Error: reg_subcmd_list(): duplicated subcommand: ", my_df$subcmd), call. = FALSE)
-    }
-    subcmds_table <<- rbind(subcmds_table, my_df)
+    reg_subcmd(subcmd = s[[1]], parent = s[[2]], desc = s[[3]])
   }
 } # reg_subcmd_list
 
@@ -242,7 +223,7 @@ reg_argument <- function(lparam, sparam, var, default, argType, desc = '') {
   
   if (sparam %in% args_table$sparam[!is.na(args_table$sparam)] || 
       lparam %in% args_table$lparam[!is.na(args_table$lparam)]) {
-    writeLines(paste("Warning: reg_argument(): duplicated param:", lparam, sparam))
+    stop(paste("Error: reg_argument(): duplicated param:", lparam, sparam), call. = FALSE)
   }
   
   my_df <- data.frame(lparam = lparam, sparam = sparam, var = var, default = default, argType = argType, 
@@ -258,27 +239,11 @@ reg_argument <- function(lparam, sparam, var, default, argType, desc = '') {
 ## reg_argument_list(args)
 ##
 reg_argument_list <- function(plist) {
-  if (is.na(desc_str)) {
-    stop("Error: reg_argument_list(): Command line parser not initialized.", call. = FALSE)
-  }
-  
   ids <- c("lparam","sparam","var","default","argType","desc")
   for (p in plist) {
     stopifnot(length(p) == length(ids))
-    my_df <- data.frame(lparam = p[[1]], sparam = p[[2]], var = p[[3]], default = p[[4]], 
-                        argType = p[[5]], desc = p[[6]], stringsAsFactors = FALSE)
-    args_table <<- rbind(args_table, my_df) 
-  }
-
-  if (any(duplicated(args_table$lparam[!is.na(args_table$lparam)]))) { 
-    tmp <- args_table$lparam[!is.na(args_table$lparam)]
-    stop(paste0("reg_argument_list(): duplicated lparam: ", 
-                tmp[duplicated(tmp)]), call. = FALSE)
-  }
-  if (any(duplicated(args_table$sparam[!is.na(args_table$sparam)]))) { 
-    tmp <- args_table$sparam[!is.na(args_table$sparam)]
-    stop(paste0("reg_argument_list(): duplicated sparam: ", 
-                tmp[duplicated(tmp)]), call. = FALSE)
+    reg_argument(lparam = p[[1]], sparam = p[[2]], var = p[[3]], default = p[[4]], 
+                 argType = p[[5]], desc = p[[6]])
   }
 } # reg_argument_list
 
