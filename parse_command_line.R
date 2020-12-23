@@ -356,14 +356,28 @@ parse_command_line <- function(args) {
       
       # if this argument has specified parents, make sure they match
       if (!all(is.na(myrow$parents))) {
-        parents <- strsplit(myrow$parents, '_')[[1]]
-        q <- c(NA, NA)
-        if (nrow(cmds_table) > 0) q[1] <- mydata$command
-        if (nrow(subcmds_table) > 0) q[2] <- mydata$subcmd
+        # list cmd or cmd/subcmd pairs for this argument, eg: "withdraw|check" and "deposit"
+        parents <- strsplit(strsplit(myrow$parents, '_')[[1]], '\\|')
+        # query holds the cmd/subcmds used on the command line. if only a command was specified as a parent,
+        # then only the command is checked. thus, an argument can apply to a specific cmd/subcmd pair,
+        # or to all subcommands of a given command.
+        query <- NA 
+        if (nrow(cmds_table) > 0) query[1] <- mydata$command
+        if (nrow(subcmds_table) > 0) query[2] <- mydata$subcmd
+        
+        # query_match is a vector of length (parents); each element is a Boolean that indicates a match
+        # to the corresponding element of parents 
+        query_match <- rep(FALSE, length(parents))
+        # iterate over each parent
+        for (j in 1:length(parents)) {
+          # if only a command is provided as parent, test only the command
+          if (length(parents[[j]]) == 1) query_match[j] <- (parents[[j]] == query[1])
+          # otherwise, test both command and subcmd
+          else query_match[j] <- (parents[[j]][1] == query[1] && parents[[j]][2] == query[2])
+        }
 
-        query <- paste(q, collapse = "|")
-        if (!query %in% parents) {
-          writeLines(paste0("Argument \'", p, "\' is not valid for command/subcommand \'", query, "\'. Ignoring."))
+        if (!any(query_match == TRUE)) {
+          writeLines(paste0("\nWarning: Command|subcommand \'", paste(query, collapse = '|'), "\' is not compatible with argument \'", p, "\'. Ignoring."))
           unk <- unk + 1
           mydata[["unknowns"]][unk] <- p
           i <- i + 1
