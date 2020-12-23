@@ -21,7 +21,7 @@ arguments <- list(
   # example TypeValue arguments. Use as '--lparam=val', '--lparam val', or '-l val'
   list("--outfile","-o","outfile",NA,argsType$TypeValue,'location of output file'),
   list("--date","-d","date",NA,argsType$TypeValue,'specify date'),
-  list("--msg","-m","msg",NA,argsType$TypeValue,'memo line message'),
+  list("--msg","-m","msg",NA,argsType$TypeValue,'memo line message',c("withdraw","check"),c("withdraw","cash")),
   list("--amount","-a","amount",NA,argsType$TypeValue,'specify dollar amount'),
   list("--payee","-p","payee",NA,argsType$TypeValue,'specify payee'),
   list("--number","-n","cknum",NA,argsType$TypeValue,'specify check number'),

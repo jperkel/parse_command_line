@@ -16,7 +16,7 @@ library(stringr)
 
 # tables to hold the possible command line params
 args_table <- data.frame(lparam = NA, sparam = NA, var = NA, default = NA, argType = NA, 
-                          desc = NA, stringsAsFactors = FALSE)
+                          desc = NA, parents = NA, stringsAsFactors = FALSE)
 cmds_table <- data.frame(cmd = NA, desc = NA, stringsAsFactors = FALSE)
 subcmds_table <- data.frame(subcmd = NA, parent = NA, desc = NA, stringsAsFactors = FALSE)
 
@@ -92,17 +92,22 @@ usage <- function() {
   } # if (nrow(cmds_table) > 0)
 
   writeLines(paste0(buffer_str(lvl1_indent), 'PARAMETERS:'))
-  writeLines(paste0(
-    buffer_str(lvl2_indent),str_pad(args_table$lparam, max(nchar(args_table$lparam)), "right"),
-    # need 5 spaces to account for sparam if none provided, eg ' (-m)'
-    ifelse (!is.na(args_table$sparam), paste0(' (', args_table$sparam, ')'), buffer_str(5)),
-    ifelse (args_table$desc == '', '', ': '),
-    args_table$desc, 
-    ifelse(is.na(args_table$default), '',
-           paste0('\n', buffer_str(lvl2_indent + max(nchar(args_table$lparam)) + 10),
-                  'default: ', 
-                    ifelse (args_table$argType == argsType$TypeBool, as.logical(args_table$default), args_table$default))
-    )))
+  for (r in 1:nrow(args_table)) {
+    myrow <- args_table[r,]
+    writeLines(paste0(
+      buffer_str(lvl2_indent),str_pad(myrow$lparam, max(nchar(args_table$lparam)), "right"),
+      # need 5 spaces to account for sparam if none provided, eg ' (-m)'
+      ifelse (!is.na(myrow$sparam), paste0(' (', myrow$sparam, ')'), buffer_str(5)),
+      ifelse (myrow$desc == '', '', ': '),
+      myrow$desc, 
+      ifelse(is.na(myrow$default), '',
+             paste0('\n', buffer_str(lvl2_indent + max(nchar(args_table$lparam)) + 10),
+                    'default: ', 
+                    ifelse (myrow$argType == argsType$TypeBool, as.logical(myrow$default), myrow$default))
+      ),
+      ifelse(is.na(myrow$parents), '', paste0("\n\t\tParents: ", myrow$parents))
+    ))
+  }
 } # usage
 
 
@@ -216,18 +221,18 @@ reg_subcmd_list <- function(slist) {
 ##                argsType$TypeMultiVal to store multiple values (ie, keywords)
 ##       desc: description string for the arg, for usage()
 ##
-reg_argument <- function(lparam, sparam, var, default, argType, desc = '') {
+reg_argument <- function(lparam, sparam, var, default, argType, desc, parents = NA) {
   if (is.na(desc_str)) {
     stop("Error: reg_argument(): Command line parser not initialized.", call. = FALSE)
   }
-  
+
   if (sparam %in% args_table$sparam[!is.na(args_table$sparam)] || 
       lparam %in% args_table$lparam[!is.na(args_table$lparam)]) {
     stop(paste("Error: reg_argument(): duplicated param:", lparam, sparam), call. = FALSE)
   }
   
   my_df <- data.frame(lparam = lparam, sparam = sparam, var = var, default = default, argType = argType, 
-                      desc = desc, stringsAsFactors = FALSE)
+                      desc = desc, parents = parents, stringsAsFactors = FALSE)
   args_table <<- rbind(args_table, my_df) 
 } # reg_argument
 
@@ -240,10 +245,24 @@ reg_argument <- function(lparam, sparam, var, default, argType, desc = '') {
 ##
 reg_argument_list <- function(plist) {
   ids <- c("lparam","sparam","var","default","argType","desc")
+  parents <- rep(NA, length(plist))
+  index <- 0
+  
   for (p in plist) {
-    stopifnot(length(p) == length(ids))
-    reg_argument(lparam = p[[1]], sparam = p[[2]], var = p[[3]], default = p[[4]], 
-                 argType = p[[5]], desc = p[[6]])
+    index <- index + 1
+#    stopifnot(length(p) >= length(ids))
+    if (length(p) > length(ids)) {
+      tmp <- NA
+      j <- 0
+      for (i in 1:(length(p)-(length(ids)+1)+1)) {
+        # j <- j + 1
+        tmp[i] <- paste(p[length(ids)+i][[1]], collapse = '|')
+      }
+      if (!all(is.na(tmp))) parents[index] <- paste(tmp, collapse = '_')
+      print (paste("Parents:", parents[index]))
+    }
+    reg_argument(lparam = p[[1]], sparam = p[[2]], var = p[[3]], default = p[[4]],
+                 argType = p[[5]], desc = p[[6]], parents = parents[index])
   }
 } # reg_argument_list
 
@@ -332,6 +351,24 @@ parse_command_line <- function(args) {
 
     if (!is.null(index)) {
       myrow <- args_table[index,]
+      
+      # if this argument has specified parents, make sure they match
+      if (!all(is.na(myrow$parents))) {
+        parents <- strsplit(myrow$parents, '_')[[1]]
+        q <- c(NA, NA)
+        if (nrow(cmds_table) > 0) q[1] <- mydata$command
+        if (nrow(subcmds_table) > 0) q[2] <- mydata$subcmd
+
+        query <- paste(q, collapse = "|")
+        if (!query %in% parents) {
+          writeLines(paste0("Argument \'", p, "\' is not valid for command/subcommand \'", query, "\'. Ignoring."))
+          unk <- unk + 1
+          mydata[["unknowns"]][unk] <- p
+          i <- i + 1
+          next
+        }
+#        print (paste("Query:", query, "; found: ", query %in% parents))
+      }
       if(myrow$argType == argsType$TypeBool) { # if the param is a logical type, save the opposite logical type
         if ((p == myrow$sparam && !is.na(myrow$sparam)) || (p == myrow$lparam && !is.na(myrow$lparam))) {
           # if the argument exactly matches lparam or sparam
