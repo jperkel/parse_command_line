@@ -10,6 +10,7 @@
 ## 1.0.3 -- 26 Aug 2019 -- add subcommand support
 ## 1.0.4 -- 27 Feb 2020 -- args, cmds and subcmds can be supplied as lists
 ## 1.0.5 -- 29 Feb 2020 -- support config.txt file
+## 1.1.0 -- 23 Dec 2020 -- supports scoping of arguments, ie associating with specific commands/subcmds
 ##########################
 
 library(stringr)

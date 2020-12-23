@@ -21,8 +21,10 @@ arguments <- list(
   # example TypeValue arguments. Use as '--lparam=val', '--lparam val', or '-l val'
   list("--outfile","-o","outfile",NA,argsType$TypeValue,'location of output file'),
   list("--date","-d","date",NA,argsType$TypeValue,'specify date'),
+  # an example argument whose scope is limited to command = withdraw (with any subcmd)
   list("--msg","-m","msg",NA,argsType$TypeValue,'memo line message',c("withdraw")),
   list("--amount","-a","amount",NA,argsType$TypeValue,'specify dollar amount'),
+  # example arguments whose scope is limited to command = withdraw, subcmd = check
   list("--payee","-p","payee",NA,argsType$TypeValue,'specify payee',c("withdraw","check")),
   list("--number","-n","cknum",NA,argsType$TypeValue,'specify check number',c("withdraw","check")),
   # an example TypeMultiVal, where all supplied params are stored

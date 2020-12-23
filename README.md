@@ -9,7 +9,7 @@ To indicate a withdrawal of $100 in cash, you might call `MyCheckbook.R withdraw
 
 Note that not all registered arguments must be provided on the command line. The default parameter passed to `reg_argument()` preloads the default. Thus, you could have an argument whose default value is FALSE. When `parse_command_line()` is called, the variable will be set to FALSE, unless it is included in the command line, in which case it will be TRUE.
 
-When registering arguments, you must indicate the type of value you expect to receive. Valid parameter types are `argsType$TypeBool` for Boolean values; `argsType$TypeValue` for arguments of type `--outfile=file`, `--outfile file`, and `-o file`; and `argsType$TypeMultiVal` for parameters where multiple values can be supplied, such as keywords: `-k key1 -k key2`. Also allowed are `argsType$TypeMetered` for parameters whose value increments each time the argument is used. Thus `-v -v -v` would return a value of 3. 
+When registering arguments, you must indicate the type of value you expect to receive. Valid parameter types are `argsType$TypeBool` for Boolean values; `argsType$TypeValue` for arguments of type `--outfile=file`, `--outfile file`, and `-o file`; and `argsType$TypeMultiVal` for parameters where multiple values can be supplied, such as keywords: `-k key1 -k key2`. `argsType$TypeMetered` allows for parameters whose value increments each time the argument is used. Thus `-v -v -v` would return a value of 3. 
 
 If `argsType$TypeBool` is used, using the argument flips the default Boolean value. So for instance, if you call `reg_argument("--plot","-p","plot",FALSE,argsType$TypeBool,'plot output')`, the default value of `plot` will be `FALSE`. If `--plot` is included in the argument list it will be set to `TRUE`. Arguments of the form `--plot=TRUE` are also allowed.
 
@@ -23,20 +23,22 @@ If `argsType$TypeBool` is used, using the argument flips the default Boolean val
 
   # or we can register in a single call, as a list, eg:
   arguments <- list(
-    # example TypeValue arguments. Use as '--lparam=val', '--lparam val', or '-l val'
-    list("--outfile","-o","outfile",NA,argsType$TypeValue,'location of output file'),
-    list("--date","-d","date",NA,argsType$TypeValue,'specify date'),
-    list("--msg","-m","msg",NA,argsType$TypeValue,'memo line message'),
-    list("--amount","-a","amount",NA,argsType$TypeValue,'specify dollar amount'),
-    list("--payee","-p","payee",NA,argsType$TypeValue,'specify payee'),
-    list("--number","-n","cknum",NA,argsType$TypeValue,'specify check number'),
-    # an example TypeMultiVal, where all supplied params are stored
-    list("--keyword","-k","keyword",NA,argsType$TypeMultiVal,'keywords'),
-    # an example TypeMetered, where each use of the param increments a variable
-    list("--verbose","-v","verbose",0,argsType$TypeMetered,'verbose level')
+  # example TypeValue arguments. Use as '--lparam=val', '--lparam val', or '-l val'
+  list("--outfile","-o","outfile",NA,argsType$TypeValue,'location of output file'),
+  list("--date","-d","date",NA,argsType$TypeValue,'specify date'),
+  # an example argument whose scope is limited to command = withdraw (with any subcmd)
+  list("--msg","-m","msg",NA,argsType$TypeValue,'memo line message',c("withdraw")),
+  list("--amount","-a","amount",NA,argsType$TypeValue,'specify dollar amount'),
+  # example arguments whose scope is limited to command = withdraw, subcmd = check
+  list("--payee","-p","payee",NA,argsType$TypeValue,'specify payee',c("withdraw","check")),
+  list("--number","-n","cknum",NA,argsType$TypeValue,'specify check number',c("withdraw","check")),
+  # an example TypeMultiVal, where all supplied params are stored
+  list("--keyword","-k","keyword",NA,argsType$TypeMultiVal,'keywords'),
+  # an example TypeMetered, where each use of the param increments a variable
+  list("--verbose","-v","verbose",0,argsType$TypeMetered,'verbose level')
   )
   reg_argument_list(arguments)
-  
+
   # we can register commands one at a time...
   # reg_command("withdraw", "add a withdrawal")
   # reg_command("deposit", "add a deposit")
@@ -65,12 +67,6 @@ If `argsType$TypeBool` is used, using the argument flips the default Boolean val
 ``` 
 
 `parse_command_line()` returns a list of all possible registered arguments. Any arguments not specified on the command line will equal the default values provided in `reg_argument()` or `reg_argument_list()`. 
-
-Each line of the file should take the form `var_name=value`, where `var_name` matches the third parameter in a previous call to `reg_argument()`. For instance, if you typically want to display your checkbook in reverse-chronological order, you could include in your configuration file:
-
-```
-revchronological=TRUE
-```
 
 `parse_command_line.R` provides a `usage()` function to create a formatted help message based on the `desc` strings passed as the final arguments to `reg_argument()`, `reg_command()` and `reg_subcmd()`. .
 
@@ -106,6 +102,7 @@ To use this tool:
 3) Register arguments with `reg_argument()`. For instance, to allow the user to supply a file name on the command line, you might call `reg_argument("--outfile","-o","outfile",NA,argsType$TypeValue,'specify outfile')`. This registers a long parameter (`--outfile`), a short version (`-o`), a variable to hold the provided value (`outfile`), a default value (`NA`), the parameter type (`argsType$TypeValue`), and a description string. 
 - `sparam` is optional in `reg_argument()`. eg: `reg_argument("--print",NA,"print",FALSE,argsType$TypeBool,"print output")`
 - Arguments can also be supplied as a list of lists in a single call. For example, using `args <- list(list("--plot","-p","plot",FALSE,argsType$TypeBool,"plot output"), list("--outfile","-o","outfile",NA,argsType$TypeValue,'specify outfile'))` and `reg_argument_list(args)`.
+- `reg_argument_list()` supports an additional parameter for each argument, which allows you to control its scope. eg, `list("--payee","-p","payee",NA,argsType$TypeValue,'specify payee',c("withdraw","check"))` means the `--payee` argument is ignored unless associated with the command/subcommand pair, `withdraw check`. By default, arguments apply to all commands.
 4) Register optional commands with `reg_command()`, and subcommands with `reg_subcmd()`.  
 - Note that if a command is registered, one must be provided on the command line. The command is assumed to be the first argument; subcommands are assumed to be the second argument. eg, `MyRprogram.R add phone <params>`
 - Commands and subcommands can also be supplied as a list in a single call using `reg_commands_list()` and `reg_subcommand_list()`, respectively.
