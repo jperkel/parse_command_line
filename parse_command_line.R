@@ -105,7 +105,9 @@ usage <- function() {
                     'default: ', 
                     ifelse (myrow$argType == argsType$TypeBool, as.logical(myrow$default), myrow$default))
       ),
-      ifelse(is.na(myrow$parents), '', paste0("\n\t\tParents: ", myrow$parents))
+      ifelse(is.na(myrow$parents), '', 
+             paste0('\n', buffer_str(lvl2_indent + max(nchar(args_table$lparam)) + 10),
+                    "Parents: ", myrow$parents))
     ))
   }
 } # usage
@@ -246,20 +248,20 @@ reg_argument <- function(lparam, sparam, var, default, argType, desc, parents = 
 reg_argument_list <- function(plist) {
   ids <- c("lparam","sparam","var","default","argType","desc")
   parents <- rep(NA, length(plist))
-  index <- 0
+  index <- 0 # count of entries in plist
   
   for (p in plist) {
     index <- index + 1
 #    stopifnot(length(p) >= length(ids))
     if (length(p) > length(ids)) {
-      tmp <- NA
-      j <- 0
+      tmp <- NA # vector to hold the cmd/subcmd parents of this argument
+      # for every argument after length(ids)...
       for (i in 1:(length(p)-(length(ids)+1)+1)) {
-        # j <- j + 1
+        # collapse into a cmd/subcmd pair separated by '|'
         tmp[i] <- paste(p[length(ids)+i][[1]], collapse = '|')
       }
       if (!all(is.na(tmp))) parents[index] <- paste(tmp, collapse = '_')
-      print (paste("Parents:", parents[index]))
+#      print (paste("Parents:", parents[index]))
     }
     reg_argument(lparam = p[[1]], sparam = p[[2]], var = p[[3]], default = p[[4]],
                  argType = p[[5]], desc = p[[6]], parents = parents[index])

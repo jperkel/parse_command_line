@@ -1,7 +1,7 @@
 source ("parse_command_line.R")
 
 # parser needs to be initialized. Let's see what it returns if not
-cmdline <- c("withdraw", "cash", "-v", "--amount=100", "--msg='birthday gift'", "foo", "--verbose", "-v")
+cmdline <- c("withdraw", "cash", "-v", "-n", "1023", "-p", "Jane Smith", "--amount=100", "--msg='birthday gift'", "foo", "--verbose", "-v")
 
 writeLines ("What if the parser isn't initialized?")
 mydata <- parse_command_line(cmdline)
@@ -23,8 +23,8 @@ arguments <- list(
   list("--date","-d","date",NA,argsType$TypeValue,'specify date'),
   list("--msg","-m","msg",NA,argsType$TypeValue,'memo line message',c("withdraw","check"),c("withdraw","cash")),
   list("--amount","-a","amount",NA,argsType$TypeValue,'specify dollar amount'),
-  list("--payee","-p","payee",NA,argsType$TypeValue,'specify payee'),
-  list("--number","-n","cknum",NA,argsType$TypeValue,'specify check number'),
+  list("--payee","-p","payee",NA,argsType$TypeValue,'specify payee',c("withdraw","check")),
+  list("--number","-n","cknum",NA,argsType$TypeValue,'specify check number',c("withdraw","check")),
   # an example TypeMultiVal, where all supplied params are stored
   list("--keyword","-k","keyword",NA,argsType$TypeMultiVal,'keywords'),
   # an example TypeMetered, where each use of the param increments a variable
