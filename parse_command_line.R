@@ -17,7 +17,7 @@ library(stringr)
 
 # tables to hold the possible command line params
 args_table <- data.frame(lparam = NA, sparam = NA, var = NA, default = NA, argType = NA, 
-                          desc = NA, parents = NA, stringsAsFactors = FALSE)
+                          desc = NA, scope = NA, stringsAsFactors = FALSE)
 cmds_table <- data.frame(cmd = NA, desc = NA, stringsAsFactors = FALSE)
 subcmds_table <- data.frame(subcmd = NA, parent = NA, desc = NA, stringsAsFactors = FALSE)
 
@@ -70,6 +70,7 @@ usage <- function() {
   
   # sort the tables alphabetically
   args_table <- args_table[order(args_table$lparam),]
+  args_table$scope <- ifelse(args_table$scope == "NA", NA, args_table$scope)
   
   if (nrow(cmds_table) > 0) {
     cmds_table <- cmds_table[order(cmds_table$cmd),]
@@ -106,9 +107,9 @@ usage <- function() {
                     'default: ', 
                     ifelse (myrow$argType == argsType$TypeBool, as.logical(myrow$default), myrow$default))
       ),
-      ifelse(is.na(myrow$parents), '', 
+      ifelse(is.na(myrow$scope), '', 
              paste0('\n', buffer_str(lvl2_indent + max(nchar(args_table$lparam)) + 10),
-                    "Parents: ", myrow$parents))
+                    "Valid for: ", gsub('_', ', ', myrow$scope)))
     ))
   }
 } # usage
@@ -223,8 +224,10 @@ reg_subcmd_list <- function(slist) {
 ##                  or '-o outfile.txt'
 ##                argsType$TypeMultiVal to store multiple values (ie, keywords)
 ##       desc: description string for the arg, for usage()
+##       scope: a list of commands & subcmds for which the arg is valid, given as a vector, 
+##                eg, "c("command1|subcmd1", "command2")
 ##
-reg_argument <- function(lparam, sparam, var, default, argType, desc, parents = NA) {
+reg_argument <- function(lparam, sparam, var, default, argType, desc, scope = NA) {
   if (is.na(desc_str)) {
     stop("Error: reg_argument(): Command line parser not initialized.", call. = FALSE)
   }
@@ -234,38 +237,36 @@ reg_argument <- function(lparam, sparam, var, default, argType, desc, parents = 
     stop(paste("Error: reg_argument(): duplicated param:", lparam, sparam), call. = FALSE)
   }
   
+  if (!is.na(scope[1])) {
+    # scope is a list of commands and subcommands in which the argument is valid, separated by 
+    # pipes and underscores. Only a command is req'd, and are separated from subcmds (if req'd) with a pipe.
+    # eg, "command1|subcmd1_command2|subcmd2_command3"
+    scope <- paste(scope, collapse = '_') 
+  }
+
   my_df <- data.frame(lparam = lparam, sparam = sparam, var = var, default = default, argType = argType, 
-                      desc = desc, parents = parents, stringsAsFactors = FALSE)
+                      desc = desc, scope = scope, stringsAsFactors = FALSE)
   args_table <<- rbind(args_table, my_df) 
 } # reg_argument
 
 
 ##
 ## Register command line arguments using a list, eg
-## args <- list (list("lparam1", "sparam1", "var1", default1, argType1, "desc1), 
-##               list("lparam2", "sparam2", "var2", default2, argType2, "desc2))
+## args <- list (list("lparam1", "sparam1", "var1", default1, argType1, "desc1", scope1), 
+##               list("lparam2", "sparam2", "var2", default2, argType2, "desc2", scope2))
 ## reg_argument_list(args)
 ##
 reg_argument_list <- function(plist) {
+  # scope is not required. So, check for the 6 required params, and if no scope provided, set to NA
   ids <- c("lparam","sparam","var","default","argType","desc")
-  parents <- rep(NA, length(plist))
-  index <- 0 # count of entries in plist
   
   for (p in plist) {
-    index <- index + 1
-#    stopifnot(length(p) >= length(ids))
-    if (length(p) > length(ids)) {
-      tmp <- NA # vector to hold the cmd/subcmd parents of this argument
-      # for every argument after length(ids)...
-      for (i in 1:(length(p)-(length(ids)+1)+1)) {
-        # collapse into a cmd/subcmd pair separated by '|'
-        tmp[i] <- paste(p[length(ids)+i][[1]], collapse = '|')
-      }
-      if (!all(is.na(tmp))) parents[index] <- paste(tmp, collapse = '_')
-#      print (paste("Parents:", parents[index]))
-    }
-    reg_argument(lparam = p[[1]], sparam = p[[2]], var = p[[3]], default = p[[4]],
-                 argType = p[[5]], desc = p[[6]], parents = parents[index])
+    if (length(p) > length(ids)) scope <- p[[7]]
+    else scope <- NA
+    
+    reg_argument (lparam = p[[1]], sparam = p[[2]], var = p[[3]], default = p[[4]],
+                  argType = p[[5]], desc = p[[6]], 
+                  scope = scope)
   }
 } # reg_argument_list
 
@@ -356,9 +357,9 @@ parse_command_line <- function(args) {
       myrow <- args_table[index,]
       
       # if this argument has specified parents, make sure they match
-      if (!all(is.na(myrow$parents))) {
+      if (!all(is.na(myrow$scope))) {
         # list cmd or cmd/subcmd pairs for this argument, eg: "withdraw|check" and "deposit"
-        parents <- strsplit(strsplit(myrow$parents, '_')[[1]], '\\|')
+        scope <- strsplit(strsplit(myrow$scope, '_')[[1]], '\\|')
         # query holds the cmd/subcmds used on the command line. if only a command was specified as a parent,
         # then only the command is checked. thus, an argument can apply to a specific cmd/subcmd pair,
         # or to all subcommands of a given command.
@@ -368,23 +369,22 @@ parse_command_line <- function(args) {
         
         # query_match is a vector of length (parents); each element is a Boolean that indicates a match
         # to the corresponding element of parents 
-        query_match <- rep(FALSE, length(parents))
+        query_match <- rep(FALSE, length(scope))
         # iterate over each parent
-        for (j in 1:length(parents)) {
+        for (j in 1:length(scope)) {
           # if only a command is provided as parent, test only the command
-          if (length(parents[[j]]) == 1) query_match[j] <- (parents[[j]] == query[1])
+          if (length(scope[[j]]) == 1) query_match[j] <- (scope[[j]] == query[1])
           # otherwise, test both command and subcmd
-          else query_match[j] <- (parents[[j]][1] == query[1] && parents[[j]][2] == query[2])
+          else query_match[j] <- (scope[[j]][1] == query[1] && scope[[j]][2] == query[2])
         }
 
         if (!any(query_match == TRUE)) {
-          writeLines(paste0("\nWarning: Command|subcommand \'", paste(query, collapse = '|'), "\' is not compatible with argument \'", p, "\'. Ignoring."))
+          writeLines(paste0("\nWarning: Argument \'", p, "\' is incompatible with command|subcommand \'", paste(query, collapse = '|'), "\'. Ignoring."))
           unk <- unk + 1
           mydata[["unknowns"]][unk] <- p
           i <- i + 1
           next
         }
-#        print (paste("Query:", query, "; found: ", query %in% parents))
       }
       if(myrow$argType == argsType$TypeBool) { # if the param is a logical type, save the opposite logical type
         if ((p == myrow$sparam && !is.na(myrow$sparam)) || (p == myrow$lparam && !is.na(myrow$lparam))) {
