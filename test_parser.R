@@ -1,13 +1,7 @@
 source ("parse_command_line.R")
 
-# parser needs to be initialized. Let's see what it returns if not
-cmdline <- c("withdraw", "cash", "-v", "-n", "1023", "-p", "Jane Smith", "--amount=100", "--msg='birthday gift'", "foo", "--verbose", "-v")
-
-writeLines ("What if the parser isn't initialized?")
-mydata <- parse_command_line(cmdline)
-print (mydata)
-
-writeLines ("\nLet's initialize it...")
+# call this program using any of the arguments and commands below to see what the parser finds
+# use --help to see the usage output
 init_command_line_parser('MyCheckbook.R','My checkbook program', '1.0.0')
 
 # we can register arguments one at a time, eg:  
@@ -60,16 +54,11 @@ subcmds <- list(
 )
 reg_subcmd_list(subcmds)
 
-writeLines ("Done!")
-
-# usage() displays a formatted help message, usually in response to a '-?' argument
-writeLines ("\nRunning usage()...")
-usage()
-writeLines ("Done!")
+args <- commandArgs(trailingOnly = TRUE)
 
 writeLines ("\nParsing command line...")
-writeLines (paste("Command line: MyCheckbook.R", paste(cmdline, collapse = ' ')))
-mydata <- parse_command_line(cmdline)
+writeLines (paste("Command line: MyCheckbook.R", paste(args, collapse = ' ')))
+mydata <- parse_command_line(args)
 writeLines ("Done!")
 
 writeLines ("\nAfter parse_command_line()...")
@@ -87,34 +76,12 @@ writeLines (paste("keywords:",mydata$keyword))
 writeLines (paste("unknowns:",mydata$unknowns))
 writeLines (paste("verbose level:", mydata$verbose))
 
-writeLines ("\nLet's test the keywords argument...'")
-cmdline <- c("find", "-k", "birthday", "-k", "Jane", "--amount=200")
-
-writeLines ("Parsing command line...")
-writeLines (paste("Command line: MyCheckbook.R", paste(cmdline, collapse = ' ')))
-mydata <- parse_command_line(cmdline)
-writeLines ("Done!")
-
-writeLines ("\nAfter parse_command_line()...")
-writeLines (paste("command:",mydata$command))
-writeLines (paste("subcommand:",mydata$subcmd))
-writeLines (paste("plot:", mydata$plot))
-writeLines (paste("infile:", mydata$infile))
-writeLines (paste("outfile:",mydata$outfile))
-writeLines (paste("date:",mydata$date))
-writeLines (paste("msg:",mydata$msg))
-writeLines (paste("amount:",mydata$amount))
-writeLines (paste("payee:",mydata$payee))
-writeLines (paste("cknum:",mydata$cknum))
-writeLines (paste("keywords:",mydata$keyword))
-writeLines (paste("unknowns:",mydata$unknowns))
-
-writeLines ("\nParsing dates...")
-writeLines (paste("Date: 2019-12-31"))
-print (parse_date("2019-12-31"))
-writeLines ("Date: 2019-12")
-print (parse_date("2019-12"))
-writeLines ("Date: 2019")
-print (parse_date("2019"))
-writeLines ("Date: 2019-13-31")
-print (parse_date("2019-13-31")) # bad date!
+# writeLines ("\nParsing dates...")
+# writeLines (paste("Date: 2019-12-31"))
+# print (parse_date("2019-12-31"))
+# writeLines ("Date: 2019-12")
+# print (parse_date("2019-12"))
+# writeLines ("Date: 2019")
+# print (parse_date("2019"))
+# writeLines ("Date: 2019-13-31")
+# print (parse_date("2019-13-31")) # bad date!

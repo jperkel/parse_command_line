@@ -304,6 +304,12 @@ parse_command_line <- function(args) {
       # filter subcmds_table to include only entries where parent == command
       subcmds_table <- subcmds_table[subcmds_table$parent == mydata$command,]
     } # if (args[i] %in% cmds_table$cmd)
+    
+    else if (args[i] %in% c("--help", "-?")) {
+      usage() 
+      stop(call. = FALSE)
+    } 
+    
     else { 
       stop (paste("parse_command_line(): unknown command:", args[i]), call. = FALSE)
     }
