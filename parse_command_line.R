@@ -433,8 +433,8 @@ parse_command_line <- function(args) {
         else if (myrow$argType == argsType$TypeRange) {
           mydata[[myrow$var]] <- args[i+1]
           s <- strsplit(args[i+1], ':')[[1]]
-          mydata[[paste0(myrow$var, 1)]] <- as.integer(s[1])
-          mydata[[paste0(myrow$var, 2)]] <- as.integer(s[2])
+          mydata[[paste0(myrow$var, 1)]] <- s[1]
+          mydata[[paste0(myrow$var, 2)]] <- s[2]
         }
         i = i + 1 # iterate the counter to ignore the next param
       } # else (lparam Value)
@@ -450,8 +450,8 @@ parse_command_line <- function(args) {
           val <- strsplit(p, "=")[[1]][2]
           mydata[[myrow$var]] <- val
           s <- strsplit(val, ':')[[1]]
-          mydata[[paste0(myrow$var, 1)]] <- as.integer(s[1])
-          mydata[[paste0(myrow$var, 2)]] <- as.integer(s[2])
+          mydata[[paste0(myrow$var, 1)]] <- s[1]
+          mydata[[paste0(myrow$var, 2)]] <- s[2]
         }
       } # else (lparam = Value)
     } # if (is.null(myrow))
