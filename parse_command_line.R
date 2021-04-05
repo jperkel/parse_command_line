@@ -32,9 +32,10 @@ ver <- NA # version number, eg "1.0.0"
 # TypeValue == any value expressed as "--arg=Value", "--arg Value", or "-a Value"
 # TypeMultiVal == TypeValue, but allowing multiple values to be stored (ie, keywords)
 # TypeMetered == value increments each time the param is used. eg, -v -v yields 2
+# TypeRange == splits a TypeValue like "1:3" into two variables, "1" and "3"
 # 
 argsEnum <- function() {
-  list (TypeBool = 1, TypeValue = 2, TypeMultiVal = 3, TypeMetered = 4) 
+  list (TypeBool = 1, TypeValue = 2, TypeMultiVal = 3, TypeMetered = 4, TypeRange = 5) 
 }
 argsType <- argsEnum()
 
@@ -429,6 +430,12 @@ parse_command_line <- function(args) {
           idx <- ifelse(is.na(mydata[[myrow$var]][1]), 1, length(mydata[[myrow$var]])+1)
           mydata[[myrow$var]][idx] <- args[i+1]
         }
+        else if (myrow$argType == argsType$TypeRange) {
+          mydata[[myrow$var]] <- args[i+1]
+          s <- strsplit(args[i+1], ':')[[1]]
+          mydata[[paste0(myrow$var, 1)]] <- as.integer(s[1])
+          mydata[[paste0(myrow$var, 2)]] <- as.integer(s[2])
+        }
         i = i + 1 # iterate the counter to ignore the next param
       } # else (lparam Value)
       else { # lparam=Value
@@ -438,6 +445,13 @@ parse_command_line <- function(args) {
         else if (myrow$argType == argsType$TypeMultiVal) {
         idx <- ifelse(is.na(mydata[[myrow$var]][1]), 1, length(mydata[[myrow$var]])+1)
           mydata[[myrow$var]][idx] <- strsplit(p, "=")[[1]][2]
+        }
+        else if (myrow$argType == argsType$TypeRange) {
+          val <- strsplit(p, "=")[[1]][2]
+          mydata[[myrow$var]] <- val
+          s <- strsplit(val, ':')[[1]]
+          mydata[[paste0(myrow$var, 1)]] <- as.integer(s[1])
+          mydata[[paste0(myrow$var, 2)]] <- as.integer(s[2])
         }
       } # else (lparam = Value)
     } # if (is.null(myrow))

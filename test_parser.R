@@ -24,7 +24,8 @@ arguments <- list(
   # an example TypeMultiVal, where all supplied params are stored
   list("--keyword","-k","keyword",NA,argsType$TypeMultiVal,'keywords'),
   # an example TypeMetered, where each use of the param increments a variable
-  list("--verbose","-v","verbose",0,argsType$TypeMetered,'verbose level')
+  list("--verbose","-v","verbose",0,argsType$TypeMetered,'verbose level'),
+  list("--range","-r","range",NA,argsType$TypeRange,'range')
 )
 reg_argument_list(arguments)
 
@@ -75,6 +76,7 @@ writeLines (paste("cknum:",mydata$cknum))
 writeLines (paste("keywords:",mydata$keyword))
 writeLines (paste("unknowns:",mydata$unknowns))
 writeLines (paste("verbose level:", mydata$verbose))
+writeLines (paste("range:", mydata$range1, '-', mydata$range2))
 
 # writeLines ("\nParsing dates...")
 # writeLines (paste("Date: 2019-12-31"))
