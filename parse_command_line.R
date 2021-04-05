@@ -393,6 +393,7 @@ parse_command_line <- function(args) {
           next
         }
       }
+      
       if(myrow$argType == argsType$TypeBool) { # if the param is a logical type, save the opposite logical type
         if ((p == myrow$sparam && !is.na(myrow$sparam)) || (p == myrow$lparam && !is.na(myrow$lparam))) {
           # if the argument exactly matches lparam or sparam
@@ -439,15 +440,18 @@ parse_command_line <- function(args) {
         i = i + 1 # iterate the counter to ignore the next param
       } # else (lparam Value)
       else { # lparam=Value
+        val <- strsplit(p, "=")[[1]][2]
         if (myrow$argType == argsType$TypeValue) {
-          mydata[[myrow$var]] <- strsplit(p, "=")[[1]][2]
+          # mydata[[myrow$var]] <- strsplit(p, "=")[[1]][2]
+          mydata[[myrow$var]] <- val
         }
         else if (myrow$argType == argsType$TypeMultiVal) {
         idx <- ifelse(is.na(mydata[[myrow$var]][1]), 1, length(mydata[[myrow$var]])+1)
-          mydata[[myrow$var]][idx] <- strsplit(p, "=")[[1]][2]
+          # mydata[[myrow$var]][idx] <- strsplit(p, "=")[[1]][2]
+        mydata[[myrow$var]][idx] <- val
         }
         else if (myrow$argType == argsType$TypeRange) {
-          val <- strsplit(p, "=")[[1]][2]
+          # val <- strsplit(p, "=")[[1]][2]
           mydata[[myrow$var]] <- val
           s <- strsplit(val, ':')[[1]]
           mydata[[paste0(myrow$var, 1)]] <- s[1]
