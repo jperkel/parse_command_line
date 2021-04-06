@@ -551,7 +551,7 @@ new_parse_command_line <- function(args) {
     myrow <- args_table[index,]
     if (length(args) == 0) {
       usage()
-      stop(paste0("new_parse_command_line(): positional argument (", myrow$lparam, ") required"), call. = FALSE)
+      stop(paste0("new_parse_command_line(): positional argument (\'", myrow$var, "\') required"), call. = FALSE)
     }
     mydata[[myrow$var]] <- args[length(args)]
     args <- args[1:length(args)-1]
