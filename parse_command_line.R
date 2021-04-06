@@ -28,14 +28,15 @@ ver <- NA # version number, eg "1.0.0"
 # Define an enum for different modes; access with argsType$<enum_element>
 # ht https://stackoverflow.com/questions/33838392/enum-like-arguments-in-r
 #
-# TypeBool == TRUE/FALSE
-# TypeValue == any value expressed as "--arg=Value", "--arg Value", or "-a Value"
-# TypeMultiVal == TypeValue, but allowing multiple values to be stored (ie, keywords)
-# TypeCount == value increments each time the param is used. eg, -v -v yields 2
-# TypeRange == splits a TypeValue like "1:3" into two variables, "1" and "3"
+# TypeBool: TRUE/FALSE
+# TypeValue: any value expressed as "--arg=Value", "--arg Value", or "-a Value"
+# TypeMultiVal: TypeValue, but allowing multiple values to be stored (ie, keywords)
+# TypeCount: value increments each time the param is used. eg, -v -v yields 2
+# TypeRange: splits a TypeValue like "1:3" into two variables, "1" and "3"
+# TypePositional: required, final argument 
 # 
 argsEnum <- function() {
-  list (TypeBool = 1, TypeValue = 2, TypeMultiVal = 3, TypeCount = 4, TypeRange = 5) 
+  list (TypeBool = 1, TypeValue = 2, TypeMultiVal = 3, TypeCount = 4, TypeRange = 5, TypePositional = 6) 
 }
 argsType <- argsEnum()
 
@@ -63,7 +64,9 @@ usage <- function() {
   writeLines(paste0(buffer_str(lvl1_indent), 'USAGE: Rscript ', script, ' ',
                    ifelse(nrow(cmds_table) > 0, '[COMMAND] ', ''),
                    ifelse(nrow(subcmds_table) > 0, '[SUBCOMMAND] ', ''),
-                   '<params>'))
+                   '<params> ',
+                   ifelse(any(args_table$argType == argsType$TypePositional), "[POSITIONALS]", "")
+                   ))
   if (!is.na(ver)) {
     writeLines(paste0(buffer_str(lvl2_indent), 'Ver: ', ver))
   }
@@ -95,6 +98,10 @@ usage <- function() {
   } # if (nrow(cmds_table) > 0)
 
   writeLines(paste0(buffer_str(lvl1_indent), 'PARAMETERS:'))
+  if (any(args_table$argType == argsType$TypePositional)) {
+    writeLines(paste0(buffer_str(lvl2_indent), "POSITIONALS: ", args_table$var[args_table$argType == argsType$TypePositional]))
+    args_table <- args_table[which(args_table$argType != argsType$TypePositional),]
+  }
   for (r in 1:nrow(args_table)) {
     myrow <- args_table[r,]
     writeLines(paste0(
@@ -144,7 +151,7 @@ reg_command <- function(cmd, help = '') {
     stop("Error: reg_command(): Command line parser not initialized.", call. = FALSE)
   }
   
-  if (cmd %in% cmds_table$cmd ) {
+  if (cmd %in% cmds_table$cmd) {
     stop(paste0("Error: reg_command(): duplicated command: ", cmd), call. = FALSE)
   }
   
@@ -536,6 +543,18 @@ new_parse_command_line <- function(args) {
   names(mydata) <- args_table$var
   for (name in names(mydata)) {
     mydata[[name]] <- args_table$default[args_table$var == name]
+  }
+  
+  # process required args (TypePositional)
+  if (any(args_table$argType == argsType$TypePositional)) {
+    index <- which(args_table$argType == argsType$TypePositional)
+    myrow <- args_table[index,]
+    if (length(args) == 0) {
+      usage()
+      stop(paste0("new_parse_command_line(): positional argument (", myrow$lparam, ") required"), call. = FALSE)
+    }
+    mydata[[myrow$var]] <- args[length(args)]
+    args <- args[1:length(args)-1]
   }
   
   # process commands if any

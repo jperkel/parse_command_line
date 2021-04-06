@@ -25,7 +25,8 @@ arguments <- list(
   list("--keyword","-k","keyword",NA,argsType$TypeMultiVal,'keywords'),
   # an example TypeCount, where each use of the param increments a variable
   list("--verbose","-v","verbose",NA,argsType$TypeCount,'verbose level'),
-  list("--range","-r","range",NA,argsType$TypeRange,'range')
+  list("--range","-r","range",NA,argsType$TypeRange,'range'),
+  list(NA,NA,"positional",NA,argsType$TypePositional,'positional')
 )
 reg_argument_list(arguments)
 
@@ -77,6 +78,7 @@ writeLines (paste("keywords:",mydata$keyword))
 writeLines (paste("unknowns:",mydata$unknowns))
 writeLines (paste("verbose level:", mydata$verbose))
 writeLines (paste("range:", mydata$range1, '-', mydata$range2))
+writeLines (paste("postional:", mydata$positional))
 
 # writeLines ("\nParsing dates...")
 # writeLines (paste("Date: 2019-12-31"))
