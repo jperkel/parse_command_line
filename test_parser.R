@@ -6,7 +6,7 @@ init_command_line_parser('MyCheckbook.R','My checkbook program', '1.0.0')
 
 # we can register arguments one at a time, eg:  
 # an example TypeBool; default == FALSE; if used in cmdline, will be set to TRUE
-reg_argument("--rev-chronological",NA,"revchronological",FALSE,argsType$TypeBool,'Display newest entries first')
+reg_argument("--sort-rev-chronological",NA,"sort_rev_chronological",FALSE,argsType$TypeBool,'Display newest entries first')
 # example TypeValue arguments. Use as '--lparam=val', '--lparam val', or '-l val'
 reg_argument("--infile","-i","infile",NA,argsType$TypeValue,'location of your checkbook file',"command|subcmd")
 
@@ -24,7 +24,7 @@ arguments <- list(
   # an example TypeMultiVal, where all supplied params are stored
   list("--keyword","-k","keyword",NA,argsType$TypeMultiVal,'keywords'),
   # an example TypeMetered, where each use of the param increments a variable
-  list("--verbose","-v","verbose",0,argsType$TypeMetered,'verbose level'),
+  list("--verbose","-v","verbose",NA,argsType$TypeMetered,'verbose level'),
   list("--range","-r","range",NA,argsType$TypeRange,'range')
 )
 reg_argument_list(arguments)
@@ -59,13 +59,13 @@ args <- commandArgs(trailingOnly = TRUE)
 
 writeLines ("\nParsing command line...")
 writeLines (paste("Command line: MyCheckbook.R", paste(args, collapse = ' ')))
-mydata <- parse_command_line(args)
+mydata <- new_parse_command_line(args)
 writeLines ("Done!")
 
 writeLines ("\nAfter parse_command_line()...")
 writeLines (paste("command:",mydata$command))
 writeLines (paste("subcommand:",mydata$subcmd))
-writeLines (paste("revchronological:", mydata$revchronological))
+writeLines (paste("sort_rev_chronological:", mydata$sort_rev_chronological))
 writeLines (paste("infile:", mydata$infile))
 writeLines (paste("outfile:",mydata$outfile))
 writeLines (paste("date:",mydata$date))

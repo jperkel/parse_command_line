@@ -511,3 +511,153 @@ parse_date <- function(d) {
   }
   return(c(year, month, day))
 } # parse_date
+
+
+new_parse_command_line <- function(args) {
+  # remove the first line of the tables, which are all NA
+  args_table <- args_table[-1,]
+  cmds_table <- cmds_table[-1,]
+  subcmds_table <- subcmds_table[-1,]
+  
+  # if neither reg_arguments() nor reg_command() has been called, there's no table to process; 
+  # return the args as a list under the name 'unknowns'
+  if (nrow(args_table) == 0 && nrow(cmds_table) == 0) {
+    writeLines ("Warning: new_parse_command_line(): no cmdline params or commands registered.")
+    return (list(unknowns = args))
+  }
+  
+  # create an empty list to store results, name each entry by its var name, & store defaults
+  mydata <- vector("list", nrow(args_table))
+  names(mydata) <- args_table$var
+  for (name in names(mydata)) {
+    mydata[[name]] <- args_table$default[args_table$var == name]
+  }
+  
+  # process commands if any
+  i <- 1
+  if (nrow(cmds_table) > 0) {
+    if (args[i] %in% cmds_table$cmd) { 
+      mydata[["command"]] <- args[i]
+      
+      # filter subcmds_table to include only entries where parent == command
+      subcmds_table <- subcmds_table[subcmds_table$parent == mydata$command,]
+    } 
+    
+    else if (args[i] %in% c("--help", "-?")) {
+      usage() 
+      stop(call. = FALSE)
+    } 
+    
+    else if (is.na(args[i])) {
+      stop("new_parse_command_line(): command required", call. = FALSE)
+    }
+    
+    else { 
+      stop (paste("new_parse_command_line(): unknown command:", args[i]), call. = FALSE)
+    }
+    i <- i + 1
+  } 
+  
+  # process subcommands if any
+  if (nrow(subcmds_table) > 0) {
+    if (args[i] %in% subcmds_table$subcmd) {
+      mydata[["subcmd"]] <- args[i]
+    }
+    else if (args[i] %in% c("--help", "-?")) {
+      usage() # TO-DO: ALLOW SPECIFIC HELP FOR SUBCOMMANDS
+      stop(call. = FALSE)
+    } 
+    else if (is.na(args[i])) {
+      stop("new_parse_command_line(): subcommand required", call. = FALSE)
+    }
+    else {
+      stop (paste0("new_parse_command_line(): \'", args[i], "\' is not a subcommand of parent \'", 
+                   mydata$command, "\'"), call. = FALSE)
+    }
+    i <- i + 1
+  } 
+  
+  # process arguments
+  unk <- 0 # number of unknown params found
+  while (i <= length(args)) {
+    p = args[i]
+    myrow <- NULL
+    index <- NULL
+    has_equals <- FALSE
+    
+    if (p %in% args_table$lparam) {
+      index <- which(args_table$lparam == p)
+    }
+    else if (p %in% args_table$sparam) {
+      index <- which(args_table$sparam == p)
+    }
+    else if (strsplit(p, "=")[[1]][1] %in% args_table$lparam) {
+      index <- which(args_table$lparam == strsplit(p, "=")[[1]][1])
+      has_equals <- TRUE
+    }
+    else if (p %in% c("--help", "-?")) {
+      usage() # TO-DO: usage(mydata$command)
+      stop(call. = FALSE)
+    }
+    else {
+      # unrecognized argument
+      unk <- unk + 1
+      mydata[["unknowns"]][unk] <- p
+      writeLines (paste("Warning: new_parse_command_line(): unknown param:", p))
+      i <- i + 1
+      next
+    }
+    
+    myrow <- args_table[index,]
+    
+    if(myrow$argType == argsType$TypeBool) { # if the param is a logical type, save the opposite logical type
+      mydata[[myrow$var]] <- !as.logical(myrow$default)
+    }
+    
+    else if (myrow$argType == argsType$TypeMetered) {
+      mydata[[myrow$var]] <- ifelse(is.na(mydata[[myrow$var]]), 1, as.integer(mydata[[myrow$var]]) + 1)
+    }
+    
+    # TypeValue, TypeMultiVal, TypeRange: store the next argument, or whatever is after the '='
+    else if (myrow$argType %in% c(argsType$TypeValue, argsType$TypeMultiVal, argsType$TypeRange)) {
+      if (has_equals == FALSE) {
+        if (i == length(args)) { # ie, there is no args[i+1]
+          stop(paste("new_parse_command_line(): Expected value missing after param:", p), call. = FALSE)
+        }
+        if (myrow$argType == argsType$TypeValue) {
+          mydata[[myrow$var]] <- args[i+1]
+        }
+        # if the same arg is passed multiple times, collect all responses (ie, for keywords)
+        else if (myrow$argType == argsType$TypeMultiVal) {
+          idx <- ifelse(is.na(mydata[[myrow$var]][1]), 1, length(mydata[[myrow$var]])+1)
+          mydata[[myrow$var]][idx] <- args[i+1]
+        }
+        else if (myrow$argType == argsType$TypeRange) {
+          mydata[[myrow$var]] <- args[i+1]
+          s <- strsplit(args[i+1], ':')[[1]]
+          mydata[[paste0(myrow$var, 1)]] <- s[1]
+          mydata[[paste0(myrow$var, 2)]] <- s[2]
+        }
+        i <- i + 1 # increment the counter to ignore the next param
+      }
+      else { # lparam=Value
+        val <- strsplit(p, "=")[[1]][2]
+        if (myrow$argType == argsType$TypeValue) {
+          mydata[[myrow$var]] <- val
+        }
+        else if (myrow$argType == argsType$TypeMultiVal) {
+          idx <- ifelse(is.na(mydata[[myrow$var]][1]), 1, length(mydata[[myrow$var]])+1)
+          mydata[[myrow$var]][idx] <- val
+        }
+        else if (myrow$argType == argsType$TypeRange) {
+          mydata[[myrow$var]] <- val
+          s <- strsplit(val, ':')[[1]]
+          mydata[[paste0(myrow$var, 1)]] <- s[1]
+          mydata[[paste0(myrow$var, 2)]] <- s[2]
+        }
+      } # else (lparam = Value)
+    }
+    i <- i + 1 # advance to next param
+  }
+  return (mydata)
+} # new_parse_command_line
