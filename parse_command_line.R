@@ -526,6 +526,11 @@ new_parse_command_line <- function(args) {
     return (list(unknowns = args))
   }
   
+  if (any(args %in% c("--help", "-?"))) {
+    usage() 
+    stop(call. = FALSE)
+  }
+  
   # create an empty list to store results, name each entry by its var name, & store defaults
   mydata <- vector("list", nrow(args_table))
   names(mydata) <- args_table$var
@@ -543,11 +548,6 @@ new_parse_command_line <- function(args) {
       subcmds_table <- subcmds_table[subcmds_table$parent == mydata$command,]
     } 
     
-    else if (args[i] %in% c("--help", "-?")) {
-      usage() 
-      stop(call. = FALSE)
-    } 
-    
     else if (is.na(args[i])) {
       stop("new_parse_command_line(): command required", call. = FALSE)
     }
@@ -563,10 +563,6 @@ new_parse_command_line <- function(args) {
     if (args[i] %in% subcmds_table$subcmd) {
       mydata[["subcmd"]] <- args[i]
     }
-    else if (args[i] %in% c("--help", "-?")) {
-      usage() # TO-DO: ALLOW SPECIFIC HELP FOR SUBCOMMANDS
-      stop(call. = FALSE)
-    } 
     else if (is.na(args[i])) {
       stop("new_parse_command_line(): subcommand required", call. = FALSE)
     }
@@ -580,25 +576,24 @@ new_parse_command_line <- function(args) {
   # process arguments
   unk <- 0 # number of unknown params found
   while (i <= length(args)) {
-    p = args[i]
+    p <- args[i]
     myrow <- NULL
     index <- NULL
     has_equals <- FALSE
     
-    if (p %in% args_table$lparam) {
-      index <- which(args_table$lparam == p)
+    if (is_lparam(p)) {
+      if (p %in% args_table$lparam) {
+        index <- which(args_table$lparam == p)
+      }
+      else if (strsplit(p, "=")[[1]][1] %in% args_table$lparam) {
+        index <- which(args_table$lparam == strsplit(p, "=")[[1]][1])
+        has_equals <- TRUE
+      }
     }
-    else if (p %in% args_table$sparam) {
+    else if (is_sparam(p) && p %in% args_table$sparam) {
       index <- which(args_table$sparam == p)
     }
-    else if (strsplit(p, "=")[[1]][1] %in% args_table$lparam) {
-      index <- which(args_table$lparam == strsplit(p, "=")[[1]][1])
-      has_equals <- TRUE
-    }
-    else if (p %in% c("--help", "-?")) {
-      usage() # TO-DO: usage(mydata$command)
-      stop(call. = FALSE)
-    }
+    
     else {
       # unrecognized argument
       unk <- unk + 1
@@ -620,7 +615,7 @@ new_parse_command_line <- function(args) {
     
     # TypeValue, TypeMultiVal, TypeRange: store the next argument, or whatever is after the '='
     else if (myrow$argType %in% c(argsType$TypeValue, argsType$TypeMultiVal, argsType$TypeRange)) {
-      if (has_equals == FALSE) {
+      if (!has_equals) {
         if (i == length(args)) { # ie, there is no args[i+1]
           stop(paste("new_parse_command_line(): Expected value missing after param:", p), call. = FALSE)
         }
@@ -640,7 +635,7 @@ new_parse_command_line <- function(args) {
         }
         i <- i + 1 # increment the counter to ignore the next param
       }
-      else { # lparam=Value
+      else { # has_equals == TRUE
         val <- strsplit(p, "=")[[1]][2]
         if (myrow$argType == argsType$TypeValue) {
           mydata[[myrow$var]] <- val
@@ -655,9 +650,24 @@ new_parse_command_line <- function(args) {
           mydata[[paste0(myrow$var, 1)]] <- s[1]
           mydata[[paste0(myrow$var, 2)]] <- s[2]
         }
-      } # else (lparam = Value)
+      }
     }
     i <- i + 1 # advance to next param
   }
   return (mydata)
 } # new_parse_command_line
+
+
+# HELPER FUNCTIONS
+remove_dashes <- function(arg) {
+  return (gsub('-', '', arg))
+} # remove_dashes
+
+
+is_lparam <- function(arg) {
+  return (grepl('^--', arg))
+} # is_lparam
+
+is_sparam <- function(arg) {
+  return(grepl('^-[^-]', arg))
+}
