@@ -60,12 +60,19 @@ usage <- function() {
   cmds_table <- cmds_table[-1,]
   subcmds_table <- subcmds_table[-1,]
   
+  positionals <- NULL
+  pos_string <- ""
+  if (any(args_table$argType == argsType$TypePositional)) {
+    positionals <- args_table$var[args_table$argType == argsType$TypePositional]
+    pos_string <- paste0('[', positionals, ']', collapse = ' ')
+  }
+  
   writeLines(paste0('\n', script, ': ', desc_str))
   writeLines(paste0(buffer_str(lvl1_indent), 'USAGE: Rscript ', script, ' ',
                    ifelse(nrow(cmds_table) > 0, '[COMMAND] ', ''),
                    ifelse(nrow(subcmds_table) > 0, '[SUBCOMMAND] ', ''),
                    '<params> ',
-                   ifelse(any(args_table$argType == argsType$TypePositional), "[POSITIONALS]", "")
+                   pos_string
                    ))
   if (!is.na(ver)) {
     writeLines(paste0(buffer_str(lvl2_indent), 'Ver: ', ver))
@@ -97,11 +104,18 @@ usage <- function() {
     writeLines('')
   } # if (nrow(cmds_table) > 0)
 
-  writeLines(paste0(buffer_str(lvl1_indent), 'PARAMETERS:'))
-  if (any(args_table$argType == argsType$TypePositional)) {
-    writeLines(paste0(buffer_str(lvl2_indent), "POSITIONALS: ", args_table$var[args_table$argType == argsType$TypePositional]))
-    args_table <- args_table[which(args_table$argType != argsType$TypePositional),]
+  if (!is.null(positionals[1])) {
+    writeLines(paste0(buffer_str(lvl1_indent), "REQUIRED: "))
+    for (p in positionals) {
+      writeLines(paste0(buffer_str(lvl2_indent),p,' -- ', args_table$help[args_table$var == p]))
+    }
   }
+  
+  # remove positionals from the table
+  args_table <- args_table[args_table$argType != argsType$TypePositional,]
+
+  writeLines('')
+  writeLines(paste0(buffer_str(lvl1_indent), 'PARAMETERS:'))
   for (r in 1:nrow(args_table)) {
     myrow <- args_table[r,]
     writeLines(paste0(
