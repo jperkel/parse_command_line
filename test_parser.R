@@ -23,8 +23,8 @@ arguments <- list(
   list("--number","-n","cknum",NA,argsType$TypeValue,'specify check number',"withdraw|check"),
   # an example TypeMultiVal, where all supplied params are stored
   list("--keyword","-k","keyword",NA,argsType$TypeMultiVal,'keywords'),
-  # an example TypeMetered, where each use of the param increments a variable
-  list("--verbose","-v","verbose",NA,argsType$TypeMetered,'verbose level'),
+  # an example TypeCount, where each use of the param increments a variable
+  list("--verbose","-v","verbose",NA,argsType$TypeCount,'verbose level'),
   list("--range","-r","range",NA,argsType$TypeRange,'range')
 )
 reg_argument_list(arguments)

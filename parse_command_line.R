@@ -17,9 +17,9 @@ library(stringr)
 
 # tables to hold the possible command line params
 args_table <- data.frame(lparam = NA, sparam = NA, var = NA, default = NA, argType = NA, 
-                          desc = NA, scope = NA, stringsAsFactors = FALSE)
-cmds_table <- data.frame(cmd = NA, desc = NA, stringsAsFactors = FALSE)
-subcmds_table <- data.frame(subcmd = NA, parent = NA, desc = NA, stringsAsFactors = FALSE)
+                          help = NA, scope = NA, stringsAsFactors = FALSE)
+cmds_table <- data.frame(cmd = NA, help = NA, stringsAsFactors = FALSE)
+subcmds_table <- data.frame(subcmd = NA, parent = NA, help = NA, stringsAsFactors = FALSE)
 
 desc_str <- NA # a short description, eg eg "My test program"
 script <- NA # name of the program, eg "MyProgram.R"
@@ -31,11 +31,11 @@ ver <- NA # version number, eg "1.0.0"
 # TypeBool == TRUE/FALSE
 # TypeValue == any value expressed as "--arg=Value", "--arg Value", or "-a Value"
 # TypeMultiVal == TypeValue, but allowing multiple values to be stored (ie, keywords)
-# TypeMetered == value increments each time the param is used. eg, -v -v yields 2
+# TypeCount == value increments each time the param is used. eg, -v -v yields 2
 # TypeRange == splits a TypeValue like "1:3" into two variables, "1" and "3"
 # 
 argsEnum <- function() {
-  list (TypeBool = 1, TypeValue = 2, TypeMultiVal = 3, TypeMetered = 4, TypeRange = 5) 
+  list (TypeBool = 1, TypeValue = 2, TypeMultiVal = 3, TypeCount = 4, TypeRange = 5) 
 }
 argsType <- argsEnum()
 
@@ -80,14 +80,14 @@ usage <- function() {
     for (r in 1:nrow(cmds_table)) {
       myrow <- cmds_table[r,]
       writeLines(paste0(buffer_str(lvl2_indent),str_pad(myrow$cmd, max(nchar(cmds_table$cmd)), "right"), 
-                       ' : ', myrow$desc))
+                       ' : ', myrow$help))
       if (nrow(subcmds_table) > 0) {
         subtable <- subcmds_table[subcmds_table$parent == myrow$cmd, ]
         if (nrow(subtable) > 0) {
           writeLines(paste0(buffer_str(lvl3_indent), "SUBCOMMANDS:"))
           subtable <- subtable[order(subtable$subcmd),]
           writeLines(paste0(buffer_str(lvl4_indent),str_pad(subtable$subcmd, max(nchar(subtable$subcmd)), "right"), 
-                         ' : ', subtable$desc))
+                         ' : ', subtable$help))
         } # if (nrow(subtable) > 0)
       } # if (nrow(subcmds_table) > 0) 
     } # for
@@ -101,8 +101,8 @@ usage <- function() {
       buffer_str(lvl2_indent),str_pad(myrow$lparam, max(nchar(args_table$lparam)), "right"),
       # need 5 spaces to account for sparam if none provided, eg ' (-m)'
       ifelse (!is.na(myrow$sparam), paste0(' (', myrow$sparam, ')'), buffer_str(5)),
-      ifelse (myrow$desc == '', '', ': '),
-      myrow$desc, 
+      ifelse (myrow$help == '', '', ': '),
+      myrow$help, 
       ifelse(is.na(myrow$default), '',
              paste0('\n', buffer_str(lvl2_indent + max(nchar(args_table$lparam)) + 10),
                     'default: ', 
@@ -137,9 +137,9 @@ init_command_line_parser <- function (script, desc, ver = NA) {
 ##       argument after the script name, and only one command is allowed.
 ##
 ##       cmd: expected command 
-##       desc: description string for the param, for usage()
+##       help: help string for the param, for usage()
 ##
-reg_command <- function(cmd, desc = '') {
+reg_command <- function(cmd, help = '') {
   if (is.na(desc_str)) {
     stop("Error: reg_command(): Command line parser not initialized.", call. = FALSE)
   }
@@ -148,21 +148,21 @@ reg_command <- function(cmd, desc = '') {
     stop(paste0("Error: reg_command(): duplicated command: ", cmd), call. = FALSE)
   }
   
-  my_df <- data.frame(cmd = cmd, desc = desc, stringsAsFactors = FALSE)
+  my_df <- data.frame(cmd = cmd, help = help, stringsAsFactors = FALSE)
   cmds_table <<- rbind(cmds_table, my_df) 
 } # reg_command
 
 
 ##
 ## register commands using a list, eg:
-## cmds <- list (list("cmd1", "desc1"), list("cmd2", "desc2"))
+## cmds <- list (list("cmd1", "help1"), list("cmd2", "help2"))
 ## reg_command_list (cmds)
 ##
 reg_command_list <- function(clist) {
-  ids <- c("cmd","desc")
+  ids <- c("cmd","help")
   for (c in clist) {
     stopifnot(length(c) == length(ids))
-    reg_command(cmd = c[[1]], desc = c[[2]])
+    reg_command(cmd = c[[1]], help = c[[2]])
   }
 } # reg_command_list
 
@@ -176,9 +176,9 @@ reg_command_list <- function(clist) {
 ##
 ##       subcmd: expected command 
 ##       parent: parent command
-##       desc: description string for the param, for usage()
+##       help: help string for the param, for usage()
 ##
-reg_subcmd <- function(subcmd = subcmd, parent = parent, desc = '') {
+reg_subcmd <- function(subcmd = subcmd, parent = parent, help = '') {
   if (is.na(desc_str)) {
     stop("Error: reg_subcmd(): Command line parser not initialized.", call. = FALSE)
   }
@@ -192,21 +192,21 @@ reg_subcmd <- function(subcmd = subcmd, parent = parent, desc = '') {
     stop(paste0("Error: reg_subcmd(): duplicated subcommand: ", subcmd), call. = FALSE)
   }
   
-  my_df <- data.frame(subcmd = subcmd, parent = parent, desc = desc, stringsAsFactors = FALSE)
+  my_df <- data.frame(subcmd = subcmd, parent = parent, help = help, stringsAsFactors = FALSE)
   subcmds_table <<- rbind(subcmds_table, my_df)
 } # reg_subcmd
 
 
 ##
 ## register subcommands using a list, eg:
-## subcmds <- list (list("subcmd1","parent1", "desc1"), list("subcmd2", "parent2", "desc2"))
+## subcmds <- list (list("subcmd1","parent1", "help1"), list("subcmd2", "parent2", "help2"))
 ## reg_subcmd_list (subcmds)
 ##
 reg_subcmd_list <- function(slist) {
-  ids <- c("subcmd","parent","desc")
+  ids <- c("subcmd","parent","help")
   for (s in slist) {
     stopifnot(length(s) == length(ids))
-    reg_subcmd(subcmd = s[[1]], parent = s[[2]], desc = s[[3]])
+    reg_subcmd(subcmd = s[[1]], parent = s[[2]], help = s[[3]])
   }
 } # reg_subcmd_list
 
@@ -224,11 +224,11 @@ reg_subcmd_list <- function(slist) {
 ##                argsType$TypeValue for params of type '--outfile=myfile.txt', '--outfile myfile.txt'
 ##                  or '-o outfile.txt'
 ##                argsType$TypeMultiVal to store multiple values (ie, keywords)
-##       desc: description string for the arg, for usage()
+##       help: help string for the arg, for usage()
 ##       scope: a list of commands & subcmds for which the arg is valid, given as a vector, 
 ##                eg, "c("command1|subcmd1", "command2")
 ##
-reg_argument <- function(lparam, sparam, var, default, argType, desc, scope = NA) {
+reg_argument <- function(lparam, sparam, var, default, argType, help, scope = NA) {
   if (is.na(desc_str)) {
     stop("Error: reg_argument(): Command line parser not initialized.", call. = FALSE)
   }
@@ -246,27 +246,27 @@ reg_argument <- function(lparam, sparam, var, default, argType, desc, scope = NA
   }
 
   my_df <- data.frame(lparam = lparam, sparam = sparam, var = var, default = default, argType = argType, 
-                      desc = desc, scope = scope, stringsAsFactors = FALSE)
+                      help = help, scope = scope, stringsAsFactors = FALSE)
   args_table <<- rbind(args_table, my_df) 
 } # reg_argument
 
 
 ##
 ## Register command line arguments using a list, eg
-## args <- list (list("lparam1", "sparam1", "var1", default1, argType1, "desc1", scope1), 
-##               list("lparam2", "sparam2", "var2", default2, argType2, "desc2", scope2))
+## args <- list (list("lparam1", "sparam1", "var1", default1, argType1, "help1", scope1), 
+##               list("lparam2", "sparam2", "var2", default2, argType2, "help2", scope2))
 ## reg_argument_list(args)
 ##
 reg_argument_list <- function(plist) {
   # scope is not required. So, check for the 6 required params, and if no scope provided, set to NA
-  ids <- c("lparam","sparam","var","default","argType","desc")
+  ids <- c("lparam","sparam","var","default","argType","help")
   
   for (p in plist) {
     if (length(p) > length(ids)) scope <- p[[7]]
     else scope <- NA
     
     reg_argument (lparam = p[[1]], sparam = p[[2]], var = p[[3]], default = p[[4]],
-                  argType = p[[5]], desc = p[[6]], 
+                  argType = p[[5]], help = p[[6]], 
                   scope = scope)
   }
 } # reg_argument_list
@@ -410,8 +410,8 @@ parse_command_line <- function(args) {
         }
       }
       
-      # TypeMetered -- each time the param is used, a value is incremented
-      else if (myrow$argType == argsType$TypeMetered) {
+      # TypeCount -- each time the param is used, a value is incremented
+      else if (myrow$argType == argsType$TypeCount) {
         if ((p == myrow$sparam && !is.na(myrow$sparam)) || (p == myrow$lparam && !is.na(myrow$lparam))) {
           mydata[[myrow$var]] <- as.integer(mydata[[myrow$var]]) + 1
         }
@@ -614,7 +614,7 @@ new_parse_command_line <- function(args) {
       mydata[[myrow$var]] <- !as.logical(myrow$default)
     }
     
-    else if (myrow$argType == argsType$TypeMetered) {
+    else if (myrow$argType == argsType$TypeCount) {
       mydata[[myrow$var]] <- ifelse(is.na(mydata[[myrow$var]]), 1, as.integer(mydata[[myrow$var]]) + 1)
     }
     
