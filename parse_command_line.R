@@ -564,7 +564,6 @@ new_parse_command_line <- function(args) {
   if (any(args_table$argType == argsType$TypePositional)) {
     # reverse-sort so variables are loaded in the order called
     index <- sort(which(args_table$argType == argsType$TypePositional), decreasing = TRUE)
-    print (args_table[index,])
     if (length(args) == 0) {
       usage()
       writeLines(paste0("new_parse_command_line(): positional argument (\'", args_table$var[index], "\') required"))
