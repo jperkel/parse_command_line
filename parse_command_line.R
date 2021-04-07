@@ -294,6 +294,25 @@ reg_argument_list <- function(plist) {
 } # reg_argument_list
 
 
+# 
+# Register a 'positional' command line argument (ie, the last argument in the list)
+reg_positionals <- function(var, default, help) {
+  reg_argument (lparam = NA, sparam = NA, var = var, default = default, argType = argsType$TypePositional, help = help)
+} # reg_positionals
+
+
+#
+# Register a list of 'positional' arguments
+reg_positionals_list <- function(plist) {
+  ids <- c("var","default","help")
+  
+  for (p in plist) {
+    stopifnot(length(p) == length(ids))
+    reg_positionals(var = p[[1]], default = p[[2]], help = p[[3]])
+  }
+} # reg_positionals_list
+
+
 ##
 ## Parse command line, using the tables of allowed options created using reg_argument() & reg_command()
 ## Returns a list of variables and values, preloaded with default values unless changed by user

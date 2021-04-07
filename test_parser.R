@@ -27,7 +27,8 @@ arguments <- list(
   list("--verbose","-v","verbose",NA,argsType$TypeCount,'verbose level'),
   list("--range","-r","range",NA,argsType$TypeRange,'range'),
   list(NA,NA,"file1",NA,argsType$TypePositional,'specify file 1'),
-  list(NA,NA,"file2",NA,argsType$TypePositional,'specify file 2')
+  list(NA,NA,"file2",NA,argsType$TypePositional,'specify file 2'),
+  list(NA,NA,"file3",NA,argsType$TypePositional,'specify file 3')
 )
 reg_argument_list(arguments)
 
@@ -81,6 +82,7 @@ writeLines (paste("verbose level:", mydata$verbose))
 writeLines (paste("range:", mydata$range1, '-', mydata$range2))
 writeLines (paste("file 1:", mydata$file1))
 writeLines (paste("file 2:", mydata$file2))
+writeLines (paste("file 3:", mydata$file3))
 
 # writeLines ("\nParsing dates...")
 # writeLines (paste("Date: 2019-12-31"))
