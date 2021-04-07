@@ -563,13 +563,16 @@ new_parse_command_line <- function(args) {
   # process required args (TypePositional)
   if (any(args_table$argType == argsType$TypePositional)) {
     index <- which(args_table$argType == argsType$TypePositional)
-    myrow <- args_table[index,]
     if (length(args) == 0) {
       usage()
-      stop(paste0("new_parse_command_line(): positional argument (\'", myrow$var, "\') required"), call. = FALSE)
+      writeLines(paste0("new_parse_command_line(): positional argument (\'", args_table$var[index], "\') required"))
+      stop(call. = FALSE)
     }
-    mydata[[myrow$var]] <- args[length(args)]
-    args <- args[1:length(args)-1]
+    for (i in index) {
+      myrow <- args_table[i,]
+      mydata[[myrow$var]] <- args[length(args)]
+      args <- args[1:length(args)-1]
+    }
   }
   
   # process commands if any
