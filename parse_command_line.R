@@ -71,7 +71,7 @@ usage <- function() {
   writeLines(paste0(buffer_str(lvl1_indent), 'USAGE: Rscript ', script, ' ',
                    ifelse(nrow(cmds_table) > 0, '[COMMAND] ', ''),
                    ifelse(nrow(subcmds_table) > 0, '[SUBCOMMAND] ', ''),
-                   '<params> ',
+                   ifelse(nrow(args_table) > 0, '<optional arguments> ', ''),
                    pos_string
                    ))
   if (!is.na(ver)) {
@@ -105,7 +105,7 @@ usage <- function() {
   } # if (nrow(cmds_table) > 0)
 
   if (!is.null(positionals[1])) {
-    writeLines(paste0(buffer_str(lvl1_indent), "REQUIRED PARAMETERS: "))
+    writeLines(paste0(buffer_str(lvl1_indent), "REQUIRED ARGUMENTS: "))
     for (p in positionals) {
       writeLines(paste0(buffer_str(lvl2_indent),str_pad(p, max(nchar(args_table$lparam), na.rm = TRUE), "right"), 
                         buffer_str(5), ": ", args_table$help[args_table$var == p]))
@@ -116,7 +116,7 @@ usage <- function() {
   args_table <- args_table[args_table$argType != argsType$TypePositional,]
 
   writeLines('')
-  writeLines(paste0(buffer_str(lvl1_indent), 'OPTIONAL PARAMETERS:'))
+  writeLines(paste0(buffer_str(lvl1_indent), 'OPTIONAL ARGUMENTS:'))
   for (r in 1:nrow(args_table)) {
     myrow <- args_table[r,]
     writeLines(paste0(
