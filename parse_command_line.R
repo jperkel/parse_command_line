@@ -105,9 +105,10 @@ usage <- function() {
   } # if (nrow(cmds_table) > 0)
 
   if (!is.null(positionals[1])) {
-    writeLines(paste0(buffer_str(lvl1_indent), "REQUIRED: "))
+    writeLines(paste0(buffer_str(lvl1_indent), "REQUIRED PARAMETERS: "))
     for (p in positionals) {
-      writeLines(paste0(buffer_str(lvl2_indent),p,' -- ', args_table$help[args_table$var == p]))
+      writeLines(paste0(buffer_str(lvl2_indent),str_pad(p, max(nchar(args_table$lparam), na.rm = TRUE), "right"), 
+                        buffer_str(5), ": ", args_table$help[args_table$var == p]))
     }
   }
   
@@ -115,7 +116,7 @@ usage <- function() {
   args_table <- args_table[args_table$argType != argsType$TypePositional,]
 
   writeLines('')
-  writeLines(paste0(buffer_str(lvl1_indent), 'PARAMETERS:'))
+  writeLines(paste0(buffer_str(lvl1_indent), 'OPTIONAL PARAMETERS:'))
   for (r in 1:nrow(args_table)) {
     myrow <- args_table[r,]
     writeLines(paste0(

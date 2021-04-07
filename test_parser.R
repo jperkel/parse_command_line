@@ -26,8 +26,8 @@ arguments <- list(
   # an example TypeCount, where each use of the param increments a variable
   list("--verbose","-v","verbose",NA,argsType$TypeCount,'verbose level'),
   list("--range","-r","range",NA,argsType$TypeRange,'range'),
-  list(NA,NA,"file 1",NA,argsType$TypePositional,'file 1'),
-  list(NA,NA,"file 2",NA,argsType$TypePositional,'file 2')
+  list(NA,NA,"file 1",NA,argsType$TypePositional,'specify file 1'),
+  list(NA,NA,"file 2",NA,argsType$TypePositional,'specify file 2')
 )
 reg_argument_list(arguments)
 
