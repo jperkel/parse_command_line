@@ -583,9 +583,9 @@ new_parse_command_line <- function(args) {
   if (any(args_table$argType == argsType$TypePositional)) {
     # reverse-sort so variables are loaded in the order called
     index <- sort(which(args_table$argType == argsType$TypePositional), decreasing = TRUE)
-    if (length(args) == 0) {
+    if (length(args) == 0 || length(args) < length(index)) {
       usage()
-      writeLines(paste0("new_parse_command_line(): positional argument (\'", args_table$var[index], "\') required"))
+      writeLines(paste0("new_parse_command_line(): one or more positional arguments missing"))
       stop(call. = FALSE)
     }
     for (i in index) {
