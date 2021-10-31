@@ -646,11 +646,19 @@ new_parse_command_line <- function(args) {
         index <- which(args_table$lparam == strsplit(p, "=")[[1]][1])
         has_equals <- TRUE
       }
+      else {
+        # unrecognized argument
+        unk <- unk + 1
+        mydata[["unknowns"]][unk] <- p
+        writeLines (paste("Warning: new_parse_command_line(): unknown param:", p))
+        i <- i + 1
+        next
+      }
     }
     else if (is_sparam(p) && p %in% args_table$sparam) {
       index <- which(args_table$sparam == p)
     }
-    
+
     else {
       # unrecognized argument
       unk <- unk + 1
