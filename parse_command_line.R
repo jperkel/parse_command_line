@@ -572,6 +572,16 @@ new_parse_command_line <- function(args) {
     stop(call. = FALSE)
   }
   
+  # if any 'concatenated' sparams -- eg '-abc' for '-a -b -c', resolve them
+  while (any(is_concatenated_sparam(args))) {
+    index <- which(is_concatenated_sparam(args))[1]
+    sparam <- args[index]
+    args <- args[-index]
+    spl <- strsplit(sparam, '')[[1]]
+    # insert the new sparams in their original position
+    args <- append(args, paste0('-', spl[2:length(spl)]), after = (index-1))
+  }
+  
   # create an empty list to store results, name each entry by its var name, & store defaults
   mydata <- vector("list", nrow(args_table))
   names(mydata) <- args_table$var
@@ -734,5 +744,9 @@ is_lparam <- function(arg) {
 } # is_lparam
 
 is_sparam <- function(arg) {
-  return(grepl('^-[^-]', arg))
+  return(grepl('^-[a-zA-Z]{1}', arg))
+}
+
+is_concatenated_sparam <- function(arg) {
+  return(grepl('^-[a-zA-Z]{2,}', arg))
 }

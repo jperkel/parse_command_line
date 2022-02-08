@@ -7,6 +7,8 @@ init_command_line_parser('MyCheckbook.R','My checkbook program', '1.0.0')
 # we can register arguments one at a time, eg:  
 # an example TypeBool; default == FALSE; if used in cmdline, will be set to TRUE
 reg_argument("--search-or",NA,"search_or",FALSE,argsType$TypeBool,'Any keyword will match (Boolean OR)')
+reg_argument("--debug","-x","debug",FALSE,argsType$TypeBool,'debug mode')
+reg_argument("--print","-y","print",FALSE,argsType$TypeBool,'print mode')
 # example TypeValue arguments. Use as '--lparam=val', '--lparam val', or '-l val'
 reg_argument("--infile","-i","infile",NA,argsType$TypeValue,'location of your checkbook file',"command|subcmd")
 
@@ -80,6 +82,8 @@ writeLines (paste("cknum:",mydata$cknum))
 writeLines (paste("keywords:",mydata$keyword))
 writeLines (paste("unknowns:",mydata$unknowns))
 writeLines (paste("verbose level:", mydata$verbose))
+writeLines (paste("print:", mydata$print))
+writeLines (paste("debug:", mydata$debug))
 writeLines (paste("range:", ifelse(is.na(mydata$range), NA, paste(mydata$range1, '-', mydata$range2))))
 # writeLines (paste("file 1:", mydata$file1))
 # writeLines (paste("file 2:", mydata$file2))
